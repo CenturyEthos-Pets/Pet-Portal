@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Century Ethos — Pet Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:#f1f5f9;min-height:100vh}
+.tab-btn{transition:all .2s;cursor:pointer;border:none;background:none}
+.card{transition:transform .18s,box-shadow .18s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.10)!important}
+.btn{cursor:pointer;border:none;transition:all .15s;font-family:'Nunito',sans-serif}
+.btn:hover{opacity:.88;transform:scale(.98)}
+input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shadow:0 0 0 3px rgba(99,102,241,.15);outline:none}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.2px}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto}
+.modal{background:white;border-radius:20px;padding:22px;width:100%;max-width:520px;margin:14px auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#0f172a;color:white;padding:11px 22px;border-radius:28px;font-weight:700;font-size:13px;z-index:999;animation:fadeUp .3s ease;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:92vw;text-align:center}
+@keyframes fadeUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.drow{display:flex;gap:6px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px}
+.dlbl{color:#94a3b8;font-weight:700;min-width:115px;flex-shrink:0}
+.dval{color:#334155;font-weight:600;word-break:break-word}
+.fl{font-size:11px;font-weight:800;color:#64748b;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.fw{margin-bottom:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sechdr{display:flex;align-items:center;gap:8px;margin:18px 0 11px;padding:8px 12px;background:#eef2ff;border-radius:10px;border-left:3px solid #6366f1}
+.star-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:2px;transition:transform .1s}
+.star-btn:hover{transform:scale(1.2)}
+.photo-box{border:2px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc}
+.photo-box:hover{border-color:#6366f1;background:#eef2ff}
+.park-toggle{width:52px;height:28px;border-radius:14px;border:none;cursor:pointer;transition:background .3s;position:relative;flex-shrink:0}
+.park-knob{width:22px;height:22px;border-radius:50%;background:white;position:absolute;top:3px;transition:left .3s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.lock-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1e1b4b 0%,#3730a3 55%,#6366f1 100%);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.lock-card{background:white;border-radius:24px;padding:36px 26px;width:100%;max-width:360px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.bday-banner{background:linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6);border-radius:16px;padding:16px 18px;margin-bottom:14px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
+.community-q{background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:10px;border-left:4px solid #6366f1}
+.reply-box{background:#f8fafc;border-radius:10px;padding:10px;margin-top:8px;border-left:3px solid #c7d2fe}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useRef,useMemo}=React;
+
+// ═══════════════════════════════════════════════════
+//  CONFIGURATION — fill these in after setup
+// ═══════════════════════════════════════════════════
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXHoMGVp-jOMS1UcDNCeZptN2o88m9ryUT6wN3mKttpVTkLVDNbC00FPMeQlQBQCYU/exec";
+const SECRET_KEY      = "CenturyEthos2026";
+const APP_PIN         = "7K2N9P";
+const SECRETARY_PIN   = "0998";
+// ═══════════════════════════════════════════════════
+
+const USE_LIVE = APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+const PET_EMOJIS={Dog:"🐕",Cat:"🐱",Fish:"🐟",Bird:"🐦",Rabbit:"🐇",Other:"🐾"};
+const PET_COLORS={Dog:"#6366f1",Cat:"#ec4899",Fish:"#0ea5e9",Bird:"#10b981",Rabbit:"#f43f5e",Other:"#64748b"};
+const TEMPERAMENTS=["Friendly","Calm","Playful","Shy","Protective","Energetic","Independent","Aggressive (needs caution)"];
+
+// ── Vaccination helpers ──────────────────────────────────
+function vaccStatus(pet){
+  if(!pet.vaccineDate)return "unknown";
+  const diff=Math.ceil((new Date(pet.vaccineDate)-new Date())/86400000);
+  if(diff<0)return "overdue";
+  if(diff<=30)return "due-soon";
+  return "ok";
+}
+function vaccColor(s){return s==="ok"?"#059669":s==="due-soon"?"#d97706":"#dc2626";}
+function vaccBg(s){return s==="ok"?"#d1fae5":s==="due-soon"?"#fef3c7":"#fee2e2";}
+function vaccLabel(s){return s==="ok"?"✓ Vaccinated":s==="due-soon"?"⚠ Due Soon":"⚠ Overdue";}
+
+// Change 1: Convert days to months for display
+function vaccTimeLabel(daysLeft){
+  if(daysLeft===null)return null;
+  const abs=Math.abs(daysLeft);
+  if(abs<30){
+    return daysLeft>=0?`${abs}d left`:`${abs}d ago`;
+  }
+  const months=Math.round(abs/30.44);
+  return daysLeft>=0?`~${months} mo left`:`~${months} mo ago`;
+}
+
+// ── Birthday helpers ─────────────────────────────────────
+function isBirthdayToday(dob){
+  if(!dob)return false;
+  const today=new Date();
+  const d=new Date(dob);
+  return d.getMonth()===today.getMonth()&&d.getDate()===today.getDate();
+}
+function petAge(dob){
+  if(!dob)return null;
+  const diff=new Date()-new Date(dob);
+  const years=Math.floor(diff/(365.25*86400000));
+  return years;
+}
+
+// ── Image compress ───────────────────────────────────────
+function compressImg(file,maxW=400,q=0.72){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const c=document.createElement("canvas");
+        const ratio=Math.min(maxW/img.width,maxW/img.height,1);
+        c.width=img.width*ratio;c.height=img.height*ratio;
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        res(c.toDataURL("image/jpeg",q));
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+// ── API helpers ──────────────────────────────────────────
+async function apiGet(action){
+  const r=await fetch(`${APPS_SCRIPT_URL}?action=${action}&key=${SECRET_KEY}`);
+  return r.json();
+}
+async function apiPost(action,data){
+  const r=await fetch(APPS_SCRIPT_URL,{method:"POST",body:JSON.stringify({action,key:SECRET_KEY,...data})});
+  return r.json();
+}
+
+// ── Demo data ────────────────────────────────────────────
+const TODAY=new Date();
+const addDays=d=>new Date(TODAY.getTime()+d*86400000).toISOString().split("T")[0];
+// Make one pet have birthday today for demo
+const todayMMDD=`${String(TODAY.getMonth()+1).padStart(2,"0")}-${String(TODAY.getDate()).padStart(2,"0")}`;
+
+const DEMO_PETS=[
+  {id:1,name:"Bruno",type:"Dog",breed:"Labrador",dob:`2022-${todayMMDD}`,email:"sharma@email.com",block:"A",flat:"201",parent1Name:"Rajesh Sharma",parent1Phone:"9876543210",parent2Name:"Priya Sharma",parent2Phone:"9876543211",caregiverName:"Ramu",caregiverPhone:"9876543212",vaccineDate:addDays(60),temperament:"Friendly",photo:"",emoji:"🐕",color:"#6366f1",inPark:false},
+  {id:2,name:"Whiskers",type:"Cat",breed:"Persian",dob:"2021-07-20",email:"mehta@email.com",block:"B",flat:"104",parent1Name:"Suresh Mehta",parent1Phone:"9123456789",parent2Name:"",parent2Phone:"",caregiverName:"",caregiverPhone:"",vaccineDate:addDays(20),temperament:"Calm",photo:"",emoji:"🐱",color:"#ec4899",inPark:false},
+  {id:3,name:"Coco",type:"Dog",breed:"Poodle",dob:`2020-${todayMMDD}`,email:"gupta@email.com",block:"C",flat:"302",parent1Name:"Anil Gupta",parent1Phone:"9988776655",parent2Name:"",parent2Phone:"",caregiverName:"Shyam Walker",caregiverPhone:"9988776656",vaccineDate:addDays(-5),temperament:"Energetic",photo:"",emoji:"🐩",color:"#6366f1",inPark:true},
+  {id:4,name:"Goldie",type:"Dog",breed:"Golden Retriever",dob:"2020-06-01",email:"joshi@email.com",block:"D",flat:"410",parent1Name:"Meena Joshi",parent1Phone:"9812345678",parent2Name:"",parent2Phone:"",caregiverName:"",caregiverPhone:"",vaccineDate:addDays(120),temperament:"Playful",photo:"",emoji:"🐕",color:"#6366f1",inPark:false},
+];
+const DEMO_LOST=[
+  {id:1,type:"lost",petName:"Max",petType:"Dog",description:"Golden Retriever, blue collar",contact:"9876501234",flat:"D-205",date:"2026-04-15",resolved:"FALSE"},
+];
+const DEMO_VETS=[
+  {id:1,name:"Happy Paws Clinic",category:"Vet",specialty:"Dogs & Cats",phone:"011-23456789",distance:"0.8 km",hours:"9am-9pm",reviews:[{user:"A-201",rating:5,text:"Excellent care, very professional",date:"2026-03-10"},{user:"B-104",rating:4,text:"Good clinic, slight wait",date:"2026-02-20"}]},
+  {id:2,name:"City Animal Hospital",category:"Vet",specialty:"All Animals",phone:"011-98765432",distance:"1.5 km",hours:"24/7",reviews:[{user:"C-302",rating:5,text:"Saved our pet's life. Highly recommend!",date:"2026-01-15"}]},
+  {id:3,name:"Paws & Claws Groomer",category:"Groomer",specialty:"Dogs & Cats",phone:"9988001122",distance:"0.5 km",hours:"10am-7pm",reviews:[{user:"D-410",rating:4,text:"Very gentle. Good pricing.",date:"2026-04-01"}]},
+  {id:4,name:"Happy Tails Walker",category:"Walker",specialty:"Dogs",phone:"9812300001",distance:"In Society",hours:"6am-8pm",reviews:[]},
+  {id:5,name:"K9 Training Academy",category:"Trainer",specialty:"Dogs",phone:"9900112233",distance:"2.0 km",hours:"8am-6pm",reviews:[{user:"A-201",rating:5,text:"Bruno is now so well-behaved!",date:"2026-03-25"}]},
+];
+// Change 4: Combined incidents + grievances
+const DEMO_REPORTS=[
+  {id:1,reportType:"Incident",category:"Hygiene",description:"Dog waste not cleaned near Gate 2",flat:"Near Gate 2",reporterName:"Resident",reporterPhone:"9876500000",date:"2026-04-20",status:"Open",photo:""},
+  {id:2,reportType:"Grievance",category:"Noise",description:"Dog barking continuously after 11pm from Flat C-405",flat:"A-301",reporterName:"",reporterPhone:"",date:"2026-04-19",status:"Under Review",photo:""},
+];
+const DEMO_NOTICES=[
+  {id:1,title:"Dog Park Cleaning Schedule",body:"The dog park will be cleaned every Sunday 7am-9am. Please plan your visits accordingly.",date:"2026-04-18",important:true,author:"Secretary"},
+  {id:2,title:"New Vet Camp — May 5th",body:"Dr. Sharma will conduct a free check-up camp on May 5th, 10am-1pm in the Community Hall.",date:"2026-04-15",important:false,author:"Secretary"},
+];
+// Change 3: Renamed from Offers to Exchange Board
+const DEMO_EXCHANGE=[
+  {id:1,itemName:"Royal Canin Puppy Pack",itemType:"Food/Treats",reason:"Our puppy didn't like it. Barely used.",contact:"9876543210",flat:"A-201",date:"2026-04-18",claimed:false},
+  {id:2,itemName:"Kong Rubber Toy",itemType:"Toy",reason:"Our cat has no interest in it.",contact:"9123456789",flat:"B-104",date:"2026-04-17",claimed:false},
+];
+// Change 7: Community Q&A
+const DEMO_COMMUNITY=[
+  {id:1,question:"Does anyone know a good pet-friendly boarding facility nearby for when we travel?",askedBy:"A-201",date:"2026-04-18",replies:[{flat:"B-104",text:"We use PetStay on MG Road — very reliable. Call them at 9988001144.",date:"2026-04-18"},{flat:"D-410",text:"Our neighbour also recommended PetStay. They have good reviews.",date:"2026-04-19"}]},
+  {id:2,question:"Is there any schedule for de-worming drive in the society?",askedBy:"C-302",date:"2026-04-17",replies:[]},
+];
+
+const EMPTY_PET={name:"",type:"Dog",breed:"",dob:"",email:"",block:"",flat:"",parent1Name:"",parent1Phone:"",parent2Name:"",parent2Phone:"",caregiverName:"",caregiverPhone:"",vaccineDate:"",temperament:"Friendly",photo:"",inPark:false};
+const EMPTY_REPORT={reportType:"Incident",category:"Hygiene",description:"",flat:"",reporterName:"",reporterPhone:"",photo:""};
+
+// ── Small reusable components ────────────────────────────
+function SecHdr({icon,title}){
+  return(
+    <div className="sechdr">
+      <span style={{fontSize:16}}>{icon}</span>
+      <span style={{fontWeight:900,fontSize:12,color:"#4338ca",letterSpacing:.7,textTransform:"uppercase"}}>{title}</span>
+    </div>
+  );
+}
+function StarRating({value,onChange}){
+  return(
+    <div style={{display:"flex",gap:2}}>
+      {[1,2,3,4,5].map(s=>(
+        <button key={s} className="star-btn" onClick={()=>onChange&&onChange(s)}>
+          <span style={{color:s<=value?"#f59e0b":"#cbd5e1"}}>{s<=value?"★":"☆"}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+function PetAvatar({pet,size=52}){
+  const [err,setErr]=useState(false);
+  const showPhoto=pet.photo&&!err;
+  const vs=vaccStatus(pet);
+  return(
+    <div style={{position:"relative",flexShrink:0}}>
+      <div style={{width:size,height:size,borderRadius:Math.round(size*.27),background:(pet.color||"#64748b")+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*.48,border:`2px solid ${(pet.color||"#64748b")}40`,overflow:"hidden"}}>
+        {showPhoto?<img src={pet.photo} alt={pet.name} onError={()=>setErr(true)} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{pet.emoji||PET_EMOJIS[pet.type]||"🐾"}</span>}
+      </div>
+      <div style={{position:"absolute",bottom:-2,right:-2,width:13,height:13,borderRadius:"50%",background:vaccColor(vs),border:"2px solid white"}}/>
+    </div>
+  );
+}
+function ParkToggle({inPark,onToggle}){
+  return(
+    <button className="park-toggle" onClick={onToggle} style={{background:inPark?"#059669":"#cbd5e1"}}>
+      <div className="park-knob" style={{left:inPark?"27px":"3px"}}/>
+    </button>
+  );
+}
+
+// ── MAIN APP ─────────────────────────────────────────────
+function App(){
+  const [unlocked,setUnlocked]=useState(false);
+  const [pin,setPin]=useState("");
+  const [pinErr,setPinErr]=useState(false);
+  const [tab,setTab]=useState("dashboard");
+  const [pets,setPets]=useState(DEMO_PETS);
+  const [lostFound,setLostFound]=useState(DEMO_LOST);
+  const [vets,setVets]=useState(DEMO_VETS);
+  const [reports,setReports]=useState(DEMO_REPORTS);        // combined incidents+grievances
+  const [notices,setNotices]=useState(DEMO_NOTICES);
+  const [exchange,setExchange]=useState(DEMO_EXCHANGE);     // renamed from offers
+  const [community,setCommunity]=useState(DEMO_COMMUNITY);  // new community Q&A
+  const [loading,setLoading]=useState(false);
+  const [syncing,setSyncing]=useState(false);
+  const [search,setSearch]=useState("");
+  const [vetFilter,setVetFilter]=useState("All");
+  const [reportFilter,setReportFilter]=useState("All");     // filter for combined reports
+  const [expandedPet,setExpandedPet]=useState(null);
+  const [expandedQ,setExpandedQ]=useState(null);            // expanded community question
+  const [secretaryUnlocked,setSecretaryUnlocked]=useState(false);
+  const [showNoticeLogin,setShowNoticeLogin]=useState(false);
+  const [showAddPet,setShowAddPet]=useState(false);
+  const [showAddAlert,setShowAddAlert]=useState(false);
+  const [showAddReport,setShowAddReport]=useState(false);   // combined report modal
+  const [showAddExchange,setShowAddExchange]=useState(false);
+  const [showAddComplaint,setShowAddComplaint]=useState(false);
+  const [showAddReview,setShowAddReview]=useState(null);
+  const [showAddVetPro,setShowAddVetPro]=useState(false);
+  const [showAddNotice,setShowAddNotice]=useState(false);
+  const [showDeleteConfirm,setShowDeleteConfirm]=useState(null);
+  const [showDeleteNotice,setShowDeleteNotice]=useState(null);
+  const [showAddQuestion,setShowAddQuestion]=useState(false);
+  const [showAddReply,setShowAddReply]=useState(null);
+  const [newPet,setNewPet]=useState(EMPTY_PET);
+  const [newAlert,setNewAlert]=useState({type:"lost",petName:"",petType:"",description:"",contact:"",flat:""});
+  const [newReport,setNewReport]=useState(EMPTY_REPORT);
+  const [newExchange,setNewExchange]=useState({itemName:"",itemType:"Toy",reason:"",contact:"",flat:""});
+  const [newReview,setNewReview]=useState({rating:5,text:"",user:""});
+  const [newVetPro,setNewVetPro]=useState({name:"",category:"Walker",specialty:"",phone:"",distance:"",hours:""});
+  const [newNotice,setNewNotice]=useState({title:"",body:"",important:false,author:"Secretary"});
+  const [newQuestion,setNewQuestion]=useState({question:"",askedBy:""});
+  const [newReply,setNewReply]=useState({flat:"",text:""});
+  const [secPin,setSecPin]=useState("");
+  const [secPinErr,setSecPinErr]=useState(false);
+  const [photoPreview,setPhotoPreview]=useState(null);
+  const [reportPhoto,setReportPhoto]=useState(null);
+  const [toast,setToast]=useState(null);
+  const fileRef=useRef();
+  const reportFileRef=useRef();
+
+  const showToast=m=>{setToast(m);setTimeout(()=>setToast(null),3500);};
+  const sf=(k,v)=>setNewPet(p=>({...p,[k]:v}));
+  const iS={width:"100%",padding:"10px 12px",borderRadius:10,border:"2px solid #e2e8f0",fontSize:14,fontWeight:600,fontFamily:"'Nunito',sans-serif",outline:"none",background:"white",color:"#1e293b"};
+
+  // PIN unlock
+  const handleUnlock=()=>{
+    if(pin===APP_PIN){setUnlocked(true);setPinErr(false);}
+    else{setPinErr(true);setPin("");}
+  };
+  // Secretary unlock
+  const handleSecretaryUnlock=()=>{
+    if(secPin===SECRETARY_PIN){
+      setSecretaryUnlocked(true);setSecPinErr(false);setShowNoticeLogin(false);
+      if(tab==="noticeboard")setShowAddNotice(true);
+    }else{setSecPinErr(true);setSecPin("");}
+  };
+
+  // Load live data
+  const loadData=useCallback(async()=>{
+    if(!USE_LIVE)return;
+    setLoading(true);
+    try{
+      const[pr,lr]=await Promise.all([apiGet("getPets"),apiGet("getLostFound")]);
+      if(pr.success)setPets(pr.data);
+      if(lr.success)setLostFound(lr.data);
+    }catch{showToast("Could not reach Google Sheets — showing demo data");}
+    setLoading(false);
+  },[]);
+  useEffect(()=>{if(unlocked)loadData();},[unlocked,loadData]);
+
+  // Photo handlers
+  const handlePetPhoto=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    if(f.size>10*1024*1024)return showToast("Photo too large — use under 10MB");
+    const c=await compressImg(f);setPhotoPreview(c);sf("photo",c);
+  };
+  const handleReportPhoto=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    const c=await compressImg(f,600,.8);setReportPhoto(c);setNewReport(p=>({...p,photo:c}));
+  };
+
+  // Pet CRUD
+  const addPet=async()=>{
+    if(!newPet.name||!newPet.parent1Name||!newPet.block||!newPet.flat||!newPet.parent1Phone||!newPet.vaccineDate)
+      return showToast("Please fill all required fields including Vaccination Due Date");
+    setSyncing(true);
+    if(USE_LIVE){
+      const res=await apiPost("addPet",{data:newPet});
+      if(res.success){await loadData();showToast("🐾 Pet registered!");}
+      else showToast("Error: "+(res.error||"Unknown"));
+    }else{
+      setPets(p=>[...p,{...newPet,id:Date.now(),emoji:PET_EMOJIS[newPet.type]||"🐾",color:PET_COLORS[newPet.type]||"#64748b"}]);
+      showToast("🐾 Pet added");
+    }
+    setNewPet(EMPTY_PET);setPhotoPreview(null);setShowAddPet(false);setSyncing(false);
+  };
+  const deletePet=async id=>{
+    if(USE_LIVE){await apiPost("deletePet",{id});await loadData();}
+    else setPets(p=>p.filter(x=>x.id!==id));
+    setShowDeleteConfirm(null);setExpandedPet(null);showToast("Pet record deleted");
+  };
+  const togglePark=async id=>{
+    const pet=pets.find(x=>x.id===id);
+    const nv=!(pet?.inPark===true||pet?.inPark==="TRUE");
+    setPets(p=>p.map(x=>x.id===id?{...x,inPark:nv}:x));
+    if(USE_LIVE)apiPost("updateParkStatus",{id,inPark:nv});
+    showToast(nv?"🌿 Entered dog park":"Left dog park");
+  };
+
+  // Lost/found
+  const addAlert=async()=>{
+    if(!newAlert.petName||!newAlert.contact)return showToast("Please fill required fields");
+    setSyncing(true);
+    if(USE_LIVE){const res=await apiPost("addLostFound",{data:newAlert});if(res.success){await loadData();showToast("🚨 Alert posted!");}}
+    else{setLostFound(l=>[{...newAlert,id:Date.now(),date:new Date().toISOString().split("T")[0],resolved:"FALSE"},...l]);showToast("Alert posted");}
+    setNewAlert({type:"lost",petName:"",petType:"",description:"",contact:"",flat:""});setShowAddAlert(false);setSyncing(false);
+  };
+  const resolveAlert=id=>{
+    setLostFound(l=>l.map(a=>a.id===id?{...a,resolved:"TRUE"}:a));
+    if(USE_LIVE)apiPost("resolveAlert",{id});showToast("✅ Resolved!");
+  };
+
+  // Review
+  const addReview=vetId=>{
+    if(!newReview.text||!newReview.user)return showToast("Please fill flat number and review");
+    setVets(v=>v.map(x=>x.id===vetId?{...x,reviews:[...x.reviews,{...newReview,date:new Date().toISOString().split("T")[0]}]}:x));
+    if(USE_LIVE)apiPost("addReview",{data:{...newReview,vetId}});
+    setNewReview({rating:5,text:"",user:""});setShowAddReview(null);showToast("⭐ Review added!");
+  };
+
+  // Combined report (incident + grievance)
+  const addReport=()=>{
+    if(!newReport.description||!newReport.flat)return showToast("Please fill required fields");
+    setReports(r=>[{...newReport,id:Date.now(),date:new Date().toISOString().split("T")[0],status:"Open"},...r]);
+    if(USE_LIVE)apiPost("addIncident",{data:newReport});
+    setNewReport(EMPTY_REPORT);setReportPhoto(null);setShowAddReport(false);showToast("📋 Report submitted!");
+  };
+
+  // Exchange board (renamed from offers)
+  const addExchangeItem=()=>{
+    if(!newExchange.itemName||!newExchange.contact||!newExchange.flat)return showToast("Please fill required fields");
+    setExchange(o=>[{...newExchange,id:Date.now(),date:new Date().toISOString().split("T")[0],claimed:false},...o]);
+    if(USE_LIVE)apiPost("addOffer",{data:newExchange});
+    setNewExchange({itemName:"",itemType:"Toy",reason:"",contact:"",flat:""});setShowAddExchange(false);showToast("🔄 Item listed!");
+  };
+
+  // Vet pro
+  const addVetPro=()=>{
+    if(!newVetPro.name||!newVetPro.phone)return showToast("Please fill name and phone");
+    setVets(v=>[...v,{...newVetPro,id:Date.now(),reviews:[]}]);
+    if(USE_LIVE)apiPost("addVetPro",{data:newVetPro});
+    setNewVetPro({name:"",category:"Walker",specialty:"",phone:"",distance:"",hours:""});setShowAddVetPro(false);showToast("✅ Professional added!");
+  };
+
+  // Notices
+  const addNotice=()=>{
+    if(!newNotice.title||!newNotice.body)return showToast("Please enter title and message");
+    const n={...newNotice,id:Date.now(),date:new Date().toISOString().split("T")[0]};
+    setNotices(prev=>[n,...prev]);
+    if(USE_LIVE)apiPost("addNotice",{data:n});
+    setNewNotice({title:"",body:"",important:false,author:"Secretary"});setShowAddNotice(false);showToast("📌 Notice posted!");
+  };
+  const deleteNotice=id=>{
+    setNotices(n=>n.filter(x=>x.id!==id));
+    if(USE_LIVE)apiPost("deleteNotice",{id});
+    setShowDeleteNotice(null);showToast("Notice deleted");
+  };
+
+  // Community Q&A
+  const addQuestion=()=>{
+    if(!newQuestion.question||!newQuestion.askedBy)return showToast("Please enter your question and flat number");
+    setCommunity(c=>[{...newQuestion,id:Date.now(),date:new Date().toISOString().split("T")[0],replies:[]},...c]);
+    setNewQuestion({question:"",askedBy:""});setShowAddQuestion(false);showToast("💬 Question posted!");
+  };
+  const addReplyFn=qId=>{
+    if(!newReply.text||!newReply.flat)return showToast("Please enter your reply and flat number");
+    setCommunity(c=>c.map(q=>q.id===qId?{...q,replies:[...q.replies,{...newReply,date:new Date().toISOString().split("T")[0]}]}:q));
+    setNewReply({flat:"",text:""});setShowAddReply(null);showToast("💬 Reply posted!");
+  };
+
+  // Computed
+  const filteredPets=pets.filter(p=>[p.name,p.parent1Name,p.block,p.flat,p.breed,p.type].some(v=>(v||"").toLowerCase().includes(search.toLowerCase())));
+  const filteredVets=vetFilter==="All"?vets:vets.filter(v=>v.category===vetFilter);
+  const filteredReports=reportFilter==="All"?reports:reports.filter(r=>r.reportType===reportFilter);
+  const avgRating=v=>v.reviews.length?Math.round(v.reviews.reduce((a,r)=>a+Number(r.rating),0)/v.reviews.length*10)/10:null;
+  const inParkPets=pets.filter(p=>p.inPark===true||p.inPark==="TRUE");
+
+  // Birthday pets today
+  const birthdayPets=pets.filter(p=>isBirthdayToday(p.dob));
+
+  const dashStats=useMemo(()=>{
+    const byType={};const byBreed={};const vaccOk=[];const vaccSoon=[];const vaccOver=[];
+    pets.forEach(p=>{
+      byType[p.type]=(byType[p.type]||0)+1;
+      byBreed[p.breed||p.type]=(byBreed[p.breed||p.type]||0)+1;
+      const vs=vaccStatus(p);
+      if(vs==="ok")vaccOk.push(p);
+      else if(vs==="due-soon")vaccSoon.push(p);
+      else vaccOver.push(p);
+    });
+    return{byType,byBreed,vaccOk,vaccSoon,vaccOver,total:pets.length};
+  },[pets]);
+
+  const tabs=[
+    {id:"dashboard",label:"Dashboard",icon:"📊"},
+    {id:"directory",label:"Directory",icon:"🐾"},
+    {id:"park",label:"Dog Park",icon:"🌿"},
+    {id:"lostfound",label:"Lost & Found",icon:"🔍"},
+    {id:"vets",label:"Vets & Pros",icon:"🏥"},
+    {id:"reports",label:"Reports",icon:"⚠️"},          // Change 4: combined
+    {id:"exchange",label:"Exchange",icon:"🔄"},          // Change 3: renamed
+    {id:"community",label:"Community",icon:"💬"},        // Change 7: new
+    {id:"noticeboard",label:"Notices",icon:"📌"},
+  ];
+
+  // ── LOCK SCREEN ──────────────────────────────────────
+  if(!unlocked){
+    return(
+      <div className="lock-screen">
+        <div className="lock-card">
+          <div style={{fontSize:50,marginBottom:10}}>🏘️</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:"#1e1b4b",marginBottom:4}}>Century Ethos Society</div>
+          <div style={{fontSize:12,color:"#64748b",fontWeight:700,marginBottom:24,letterSpacing:.6}}>PET COMMUNITY PORTAL</div>
+          <label className="fl" style={{textAlign:"left"}}>Enter Society PIN to continue</label>
+          <input type="password" value={pin} onChange={e=>setPin(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleUnlock()} placeholder="••••" maxLength={8}
+            style={{...iS,textAlign:"center",fontSize:24,letterSpacing:8,marginBottom:8,border:"2px solid #c7d2fe"}}/>
+          {pinErr&&<div style={{color:"#dc2626",fontSize:12,fontWeight:700,marginBottom:8}}>Incorrect PIN. Please try again.</div>}
+          <button className="btn" onClick={handleUnlock} style={{width:"100%",padding:"13px",borderRadius:12,background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",fontWeight:800,fontSize:15,marginTop:4}}>Enter Portal</button>
+          <div style={{fontSize:11,color:"#94a3b8",marginTop:14,lineHeight:1.6}}>For Century Ethos residents only.<br/>Contact secretary for the PIN.</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN APP ─────────────────────────────────────────
+  return(
+    <div style={{fontFamily:"'Nunito',sans-serif",minHeight:"100vh",background:"#f1f5f9"}}>
+
+      {/* HEADER */}
+      <div style={{background:"linear-gradient(135deg,#1e1b4b 0%,#3730a3 55%,#6366f1 100%)",padding:"22px 16px 16px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-20,right:-10,fontSize:100,opacity:.07}}>🐾</div>
+        <div style={{maxWidth:700,margin:"0 auto",position:"relative"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+            <span style={{fontSize:32}}>🏘️</span>
+            <div>
+              <div style={{fontFamily:"'Playfair Display',serif",color:"white",fontSize:20,fontWeight:800,lineHeight:1.1}}>Century Ethos</div>
+              <div style={{color:"#c7d2fe",fontSize:12,fontWeight:700,letterSpacing:.8}}>PET COMMUNITY PORTAL</div>
+            </div>
+            {loading&&<div className="spin" style={{marginLeft:"auto",fontSize:16,color:"white"}}>⏳</div>}
+          </div>
+          <div style={{color:"#e0e7ff",fontSize:12,marginTop:6,opacity:.9}}>
+            {pets.length} pets · {inParkPets.length} in park now · {lostFound.filter(l=>l.resolved==="FALSE"||l.resolved===false).length} active alerts
+          </div>
+          <div style={{marginTop:10,padding:"6px 12px",borderRadius:20,background:USE_LIVE?"rgba(16,185,129,.25)":"rgba(251,191,36,.2)",display:"inline-flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:10}}>{USE_LIVE?"🟢":"🟡"}</span>
+            <span style={{color:USE_LIVE?"#6ee7b7":"#fde68a",fontSize:11,fontWeight:700}}>
+              {USE_LIVE?"Live — connected to Google Sheets":"Demo mode — not yet connected"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* BIRTHDAY BANNER — Change 6 */}
+      {birthdayPets.length>0&&(
+        <div className="bday-banner" style={{margin:"0",borderRadius:0,padding:"14px 20px"}}>
+          <div style={{maxWidth:700,margin:"0 auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <span style={{fontSize:28}}>🎂</span>
+            <div style={{flex:1}}>
+              <div style={{color:"white",fontWeight:900,fontSize:15}}>
+                🎉 Happy Birthday{birthdayPets.length>1?"":""}!
+                {birthdayPets.map((p,i)=>(
+                  <span key={p.id}>{i>0?" & ":` `}<strong>{p.name}</strong></span>
+                ))}
+                {birthdayPets.length>1?" are":"'s"} turning {birthdayPets.map(p=>petAge(p.dob)).join(" & ")} today!
+              </div>
+              <div style={{color:"rgba(255,255,255,.85)",fontSize:12,marginTop:2}}>
+                {birthdayPets.map(p=>`${p.name} (${p.parent1Name}, Blk ${p.block}-${p.flat})`).join(" · ")}
+              </div>
+            </div>
+            <span style={{fontSize:28}}>🐾</span>
+          </div>
+        </div>
+      )}
+
+      {/* TABS */}
+      <div style={{background:"white",borderBottom:"2px solid #e2e8f0",position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(0,0,0,.06)",overflowX:"auto"}}>
+        <div style={{display:"flex",minWidth:"max-content"}}>
+          {tabs.map(t=>(
+            <button key={t.id} className="tab-btn" onClick={()=>setTab(t.id)} style={{
+              padding:"11px 13px",fontSize:10,fontWeight:800,
+              color:tab===t.id?"#4338ca":"#94a3b8",
+              borderBottom:tab===t.id?"3px solid #6366f1":"3px solid transparent",
+              fontFamily:"'Nunito',sans-serif",whiteSpace:"nowrap"
+            }}>
+              <div style={{fontSize:16,marginBottom:2}}>{t.icon}</div>{t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* CONTENT */}
+      <div style={{maxWidth:700,margin:"0 auto",padding:"18px 14px 80px"}}>
+
+        {/* ── DASHBOARD ── */}
+        {tab==="dashboard"&&(
+          <div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b",marginBottom:4}}>Pet Dashboard</div>
+            <div style={{color:"#64748b",fontSize:13,marginBottom:16}}>Society-wide pet overview</div>
+
+            {/* Change 6: Birthday on dashboard too */}
+            {birthdayPets.length>0&&(
+              <div style={{background:"linear-gradient(135deg,#fef3c7,#fde68a)",borderRadius:14,padding:"12px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",border:"2px solid #f59e0b"}}>
+                <span style={{fontSize:26}}>🎂</span>
+                <div>
+                  <div style={{fontWeight:900,fontSize:13,color:"#92400e"}}>Today's Birthday{birthdayPets.length>1?"s":""}!</div>
+                  <div style={{fontSize:12,color:"#78350f"}}>{birthdayPets.map(p=>`${p.name} (${p.type}, turning ${petAge(p.dob)})`).join(" · ")}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Change 2: Better wording for action needed */}
+            <div className="three-col" style={{marginBottom:14}}>
+              {[
+                {label:"Total Pets",value:dashStats.total,icon:"🐾",bg:"#eef2ff",col:"#4338ca"},
+                {label:"Fully Vaccinated",value:dashStats.vaccOk.length,icon:"✅",bg:"#d1fae5",col:"#065f46"},
+                {label:"Vaccination Pending",value:dashStats.vaccSoon.length+dashStats.vaccOver.length,icon:"💉",bg:"#fee2e2",col:"#991b1b"},
+              ].map((s,i)=>(
+                <div key={i} style={{background:s.bg,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
+                  <div style={{fontSize:22,marginBottom:4}}>{s.icon}</div>
+                  <div style={{fontSize:22,fontWeight:900,color:s.col}}>{s.value}</div>
+                  <div style={{fontSize:9,fontWeight:700,color:s.col,opacity:.85,lineHeight:1.3}}>{s.label}</div>
+                  {i===2&&dashStats.vaccSoon.length+dashStats.vaccOver.length>0&&(
+                    <div style={{fontSize:9,color:s.col,marginTop:3}}>{dashStats.vaccSoon.length} due soon · {dashStats.vaccOver.length} overdue</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{background:"white",borderRadius:14,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)",marginBottom:12}}>
+              <div style={{fontWeight:900,fontSize:13,marginBottom:12,color:"#1e293b"}}>🐾 Pets by Type</div>
+              {Object.entries(dashStats.byType).map(([type,count])=>(
+                <div key={type} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                  <div style={{width:76,fontSize:12,fontWeight:700,color:"#64748b"}}>{PET_EMOJIS[type]||"🐾"} {type}</div>
+                  <div style={{flex:1,background:"#f1f5f9",borderRadius:8,height:18,overflow:"hidden"}}>
+                    <div style={{width:`${(count/dashStats.total)*100}%`,background:PET_COLORS[type]||"#64748b",height:"100%",borderRadius:8}}/>
+                  </div>
+                  <div style={{width:20,fontSize:12,fontWeight:900,color:"#334155",textAlign:"right"}}>{count}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Change 1: Days converted to months */}
+            <div style={{background:"white",borderRadius:14,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)",marginBottom:12}}>
+              <div style={{fontWeight:900,fontSize:13,marginBottom:12,color:"#1e293b"}}>💉 Vaccination Status</div>
+              {pets.map(p=>{
+                const vs=vaccStatus(p);
+                const daysLeft=p.vaccineDate?Math.ceil((new Date(p.vaccineDate)-new Date())/86400000):null;
+                const timeLabel=vaccTimeLabel(daysLeft);
+                return(
+                  <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid #f1f5f9"}}>
+                    <PetAvatar pet={p} size={32}/>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:800,fontSize:12,color:"#1e293b"}}>{p.name} <span style={{color:"#94a3b8",fontWeight:500}}>({p.block}-{p.flat})</span></div>
+                      <div style={{fontSize:11,color:"#64748b"}}>{p.breed||p.type}</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <span className="badge" style={{background:vaccBg(vs),color:vaccColor(vs)}}>{vaccLabel(vs)}</span>
+                      {timeLabel&&<div style={{fontSize:10,color:vaccColor(vs),fontWeight:700,marginTop:2}}>{timeLabel}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{background:"white",borderRadius:14,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:13,marginBottom:10,color:"#1e293b"}}>🏷️ Breeds in Society</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                {Object.entries(dashStats.byBreed).map(([breed,count])=>(
+                  <span key={breed} className="badge" style={{background:"#eef2ff",color:"#4338ca",fontSize:12,padding:"4px 12px"}}>{breed} ({count})</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── DIRECTORY ── */}
+        {tab==="directory"&&(
+          <div>
+            <div style={{display:"flex",gap:10,marginBottom:14,alignItems:"center"}}>
+              <div style={{flex:1,position:"relative"}}>
+                <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#94a3b8"}}>🔍</span>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search pet, owner, block, flat..." style={{...iS,paddingLeft:36,borderRadius:12}}/>
+              </div>
+              <button className="btn" onClick={()=>{setShowAddPet(true);setPhotoPreview(null);setNewPet(EMPTY_PET);}}
+                style={{background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",padding:"10px 14px",borderRadius:12,fontWeight:800,fontSize:12,whiteSpace:"nowrap"}}>+ Register</button>
+            </div>
+            <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+              {["All","Dog","Cat","Bird","Fish","Rabbit"].map(t=>(
+                <button key={t} className="btn" onClick={()=>setSearch(t==="All"?"":t)}
+                  style={{padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:700,background:"#eef2ff",color:"#4338ca",border:"1px solid #c7d2fe"}}>{t}</button>
+              ))}
+            </div>
+            {loading&&<div style={{textAlign:"center",padding:"28px 0",color:"#94a3b8",fontWeight:700}}><span className="spin">⏳</span> Loading...</div>}
+            {!loading&&filteredPets.length===0&&<div style={{textAlign:"center",padding:"36px 0",color:"#94a3b8"}}><div style={{fontSize:44}}>🐾</div><div style={{fontWeight:700,marginTop:8}}>No pets found</div></div>}
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {filteredPets.map(pet=>{
+                const vs=vaccStatus(pet);
+                const daysLeft=pet.vaccineDate?Math.ceil((new Date(pet.vaccineDate)-new Date())/86400000):null;
+                const bday=isBirthdayToday(pet.dob);
+                return(
+                  <div key={pet.id}>
+                    <div className="card" onClick={()=>setExpandedPet(expandedPet===pet.id?null:pet.id)}
+                      style={{background:"white",borderRadius:expandedPet===pet.id?"14px 14px 0 0":14,padding:"14px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",display:"flex",gap:12,alignItems:"center",cursor:"pointer",borderLeft:bday?"4px solid #f59e0b":"none"}}>
+                      <PetAvatar pet={pet} size={50}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                          <span style={{fontWeight:900,fontSize:14,color:"#1e293b"}}>{pet.name}</span>
+                          {bday&&<span className="badge" style={{background:"#fef3c7",color:"#92400e"}}>🎂 Birthday!</span>}
+                          <span className="badge" style={{background:(pet.color||"#64748b")+"18",color:(pet.color||"#64748b")}}>{pet.type}</span>
+                          <span className="badge" style={{background:vaccBg(vs),color:vaccColor(vs)}}>{vaccLabel(vs)}</span>
+                          {(pet.inPark===true||pet.inPark==="TRUE")&&<span className="badge" style={{background:"#d1fae5",color:"#059669"}}>🌿 In Park</span>}
+                        </div>
+                        <div style={{color:"#64748b",fontSize:12,marginTop:2}}>{pet.breed||pet.type} · Blk {pet.block}, Flat {pet.flat}</div>
+                        <div style={{color:"#94a3b8",fontSize:11,marginTop:1,fontWeight:600}}>{pet.parent1Name} · {pet.parent1Phone}</div>
+                        {(vs==="due-soon"||vs==="overdue")&&daysLeft!==null&&(
+                          <div style={{fontSize:11,color:vaccColor(vs),fontWeight:800,marginTop:3}}>
+                            {daysLeft>=0?`💉 Vaccine due in ${vaccTimeLabel(daysLeft)}`:`💉 Vaccine ${vaccTimeLabel(daysLeft)}`}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{color:"#6366f1",fontSize:14,flexShrink:0}}>{expandedPet===pet.id?"▲":"▼"}</div>
+                    </div>
+                    {expandedPet===pet.id&&(
+                      <div style={{background:"#fafbff",borderRadius:"0 0 14px 14px",padding:"14px",border:"1px solid #e0e7ff",borderTop:"none"}}>
+                        {pet.photo&&<div style={{textAlign:"center",marginBottom:12}}><img src={pet.photo} alt={pet.name} style={{width:110,height:110,borderRadius:18,objectFit:"cover",border:"3px solid #c7d2fe",boxShadow:"0 4px 14px rgba(0,0,0,.1)"}}/></div>}
+                        <div style={{fontWeight:900,color:"#4338ca",fontSize:11,marginBottom:8,textTransform:"uppercase"}}>Full Profile</div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 8px"}}>
+                          {[["Name",pet.name],["Type",pet.type],["Breed",pet.breed||"—"],["Date of Birth",pet.dob||"—"],["Temperament",pet.temperament||"—"],["Block/Flat",`${pet.block}-${pet.flat}`]].map(([l,v])=>(
+                            <div key={l} className="drow"><span className="dlbl">{l}</span><span className="dval">{v||"—"}</span></div>
+                          ))}
+                        </div>
+                        {pet.email&&<div className="drow"><span className="dlbl">Email</span><span className="dval">{pet.email}</span></div>}
+                        <div className="drow"><span className="dlbl">Vaccination</span><span className="dval" style={{color:vaccColor(vs)}}>{vaccLabel(vs)}{pet.vaccineDate?" · Due: "+pet.vaccineDate:""}</span></div>
+                        <div style={{marginTop:10,padding:"10px",background:"#eef2ff",borderRadius:10,border:"1px solid #c7d2fe"}}>
+                          <div style={{fontWeight:900,color:"#4338ca",fontSize:11,marginBottom:6,textTransform:"uppercase"}}>Contacts</div>
+                          <div className="drow"><span className="dlbl">Parent 1</span><span className="dval">{pet.parent1Name||"—"}{pet.parent1Phone?" · "+pet.parent1Phone:""}</span></div>
+                          {pet.parent2Name&&<div className="drow"><span className="dlbl">Parent 2</span><span className="dval">{pet.parent2Name}{pet.parent2Phone?" · "+pet.parent2Phone:""}</span></div>}
+                          {pet.caregiverName&&<div className="drow"><span className="dlbl">Caregiver</span><span className="dval">{pet.caregiverName}{pet.caregiverPhone?" · "+pet.caregiverPhone:""}</span></div>}
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,padding:"10px 12px",background:"#f0fdf4",borderRadius:10,border:"1px solid #86efac"}}>
+                          <div>
+                            <div style={{fontWeight:800,fontSize:12,color:"#065f46"}}>🌿 Dog Park Status</div>
+                            <div style={{fontSize:11,color:"#64748b"}}>{(pet.inPark===true||pet.inPark==="TRUE")?"Currently inside":"Not in park"}</div>
+                          </div>
+                          <ParkToggle inPark={pet.inPark===true||pet.inPark==="TRUE"} onToggle={()=>togglePark(pet.id)}/>
+                        </div>
+                        <button className="btn" onClick={()=>setShowDeleteConfirm(pet.id)} style={{width:"100%",marginTop:10,padding:"10px",borderRadius:10,background:"#fee2e2",color:"#dc2626",fontWeight:800,fontSize:12}}>🗑️ Remove Pet Record (Shifting Out)</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── DOG PARK ── */}
+        {tab==="park"&&(
+          <div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b",marginBottom:4}}>🌿 Dog Park Live View</div>
+            <div style={{color:"#64748b",fontSize:13,marginBottom:14}}>Toggle your pet's status when entering or leaving</div>
+            <div style={{background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",borderRadius:14,padding:"14px",marginBottom:16,border:"2px solid #86efac"}}>
+              <div style={{fontWeight:900,color:"#065f46",fontSize:15,marginBottom:6}}>🌿 In Park Now: {inParkPets.length} pet{inParkPets.length!==1?"s":""}</div>
+              {inParkPets.length===0?<div style={{color:"#64748b",fontSize:13}}>Park is empty right now</div>:(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}>
+                  {inParkPets.map(p=>(
+                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:6,background:"white",borderRadius:10,padding:"6px 10px",boxShadow:"0 1px 4px rgba(0,0,0,.07)"}}>
+                      <PetAvatar pet={p} size={28}/>
+                      <div><div style={{fontWeight:800,fontSize:12,color:"#1e293b"}}>{p.name}</div><div style={{fontSize:10,color:"#64748b"}}>{p.temperament}</div></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{fontWeight:900,fontSize:13,marginBottom:10,color:"#334155"}}>Update Status</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {pets.filter(p=>p.type==="Dog"||p.type==="Rabbit").map(p=>(
+                <div key={p.id} style={{background:"white",borderRadius:14,padding:"13px",boxShadow:"0 2px 8px rgba(0,0,0,.06)",display:"flex",alignItems:"center",gap:12}}>
+                  <PetAvatar pet={p} size={42}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:900,fontSize:13,color:"#1e293b"}}>{p.name}</div>
+                    <div style={{fontSize:11,color:"#64748b"}}>{p.temperament} · {p.parent1Name}</div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                    <ParkToggle inPark={p.inPark===true||p.inPark==="TRUE"} onToggle={()=>togglePark(p.id)}/>
+                    <div style={{fontSize:10,fontWeight:700,color:(p.inPark===true||p.inPark==="TRUE")?"#059669":"#94a3b8"}}>{(p.inPark===true||p.inPark==="TRUE")?"Inside":"Outside"}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── LOST & FOUND ── */}
+        {tab==="lostfound"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b"}}>Lost & Found</div>
+                <div style={{color:"#64748b",fontSize:13}}>{lostFound.filter(l=>l.resolved==="FALSE"||l.resolved===false).length} active alerts</div>
+              </div>
+              <button className="btn" onClick={()=>setShowAddAlert(true)} style={{background:"linear-gradient(135deg,#dc2626,#f97316)",color:"white",padding:"9px 14px",borderRadius:12,fontWeight:800,fontSize:12}}>+ Post Alert</button>
+            </div>
+            {lostFound.length===0&&<div style={{textAlign:"center",padding:"36px 0",color:"#94a3b8"}}><div style={{fontSize:44}}>🔍</div><div style={{fontWeight:700,marginTop:8}}>No alerts yet</div></div>}
+            {lostFound.map(alert=>(
+              <div key={alert.id} className="card" style={{background:"white",borderRadius:14,padding:"14px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",borderLeft:`4px solid ${alert.type==="lost"?"#dc2626":"#059669"}`,opacity:(alert.resolved==="TRUE"||alert.resolved===true)?.5:1,marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                      <span className="badge" style={{background:alert.type==="lost"?"#fee2e2":"#d1fae5",color:alert.type==="lost"?"#dc2626":"#059669"}}>{alert.type==="lost"?"🚨 LOST":"✅ FOUND"}</span>
+                      {(alert.resolved==="TRUE"||alert.resolved===true)&&<span className="badge" style={{background:"#f1f5f9",color:"#64748b"}}>Resolved</span>}
+                    </div>
+                    <div style={{fontWeight:900,fontSize:14,color:"#1e293b"}}>{alert.petName}{alert.petType&&" · "+alert.petType}</div>
+                    <div style={{color:"#64748b",fontSize:12,marginTop:3}}>{alert.description}</div>
+                    <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:4,display:"flex",gap:10,flexWrap:"wrap"}}>
+                      <span>{alert.date}</span>{alert.flat&&<span>🏠 {alert.flat}</span>}<span>📞 {alert.contact}</span>
+                    </div>
+                  </div>
+                  {(alert.resolved==="FALSE"||alert.resolved===false)&&(
+                    <button className="btn" onClick={()=>resolveAlert(alert.id)} style={{background:"#d1fae5",color:"#059669",padding:"5px 10px",borderRadius:8,fontSize:11,fontWeight:800,flexShrink:0,marginLeft:8}}>Resolve</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── VETS & PROS — Change 5: removed emergency banner & badge ── */}
+        {tab==="vets"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b"}}>Vets & Professionals</div>
+              <button className="btn" onClick={()=>setShowAddVetPro(true)} style={{background:"linear-gradient(135deg,#059669,#10b981)",color:"white",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:11}}>+ Add</button>
+            </div>
+            <div style={{color:"#64748b",fontSize:13,marginBottom:14}}>Vets, groomers, walkers, trainers — with resident reviews</div>
+            <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+              {["All","Vet","Groomer","Walker","Trainer"].map(f=>(
+                <button key={f} className="btn" onClick={()=>setVetFilter(f)}
+                  style={{padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:700,background:vetFilter===f?"#4338ca":"#eef2ff",color:vetFilter===f?"white":"#4338ca",border:"1px solid #c7d2fe"}}>{f}</button>
+              ))}
+            </div>
+            {filteredVets.map(v=>{
+              const avg=avgRating(v);
+              return(
+                <div key={v.id} className="card" style={{background:"white",borderRadius:14,padding:"14px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
+                        <span style={{fontWeight:900,fontSize:14,color:"#1e293b"}}>{v.name}</span>
+                        <span className="badge" style={{background:"#e0f2fe",color:"#0369a1"}}>{v.category}</span>
+                      </div>
+                      <div style={{color:"#64748b",fontSize:12}}>{v.specialty}</div>
+                      <div style={{display:"flex",gap:10,marginTop:5,fontSize:11,color:"#94a3b8",fontWeight:600,flexWrap:"wrap"}}>
+                        <span>📞 {v.phone}</span>{v.distance&&<span>📍 {v.distance}</span>}<span>🕒 {v.hours}</span>
+                      </div>
+                      {avg&&(
+                        <div style={{display:"flex",alignItems:"center",gap:4,marginTop:6}}>
+                          <StarRating value={Math.round(avg)}/>
+                          <span style={{fontSize:12,fontWeight:700,color:"#334155"}}>{avg} ({v.reviews.length} review{v.reviews.length!==1?"s":""})</span>
+                        </div>
+                      )}
+                    </div>
+                    <button className="btn" onClick={()=>{setShowAddReview(v.id);setNewReview({rating:5,text:"",user:""}); }}
+                      style={{background:"#eef2ff",color:"#4338ca",padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:800,flexShrink:0,marginLeft:8}}>+ Review</button>
+                  </div>
+                  {v.reviews.length>0&&(
+                    <div style={{marginTop:10,borderTop:"1px solid #f1f5f9",paddingTop:10}}>
+                      {v.reviews.slice(-2).map((rv,i)=>(
+                        <div key={i} style={{marginBottom:7}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                              <StarRating value={Number(rv.rating)}/>
+                              <span style={{fontSize:11,fontWeight:700,color:"#334155"}}>Flat {rv.user}</span>
+                            </div>
+                            <span style={{fontSize:10,color:"#94a3b8"}}>{rv.date}</span>
+                          </div>
+                          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{rv.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── REPORTS — Change 4: Combined Incidents + Grievances ── */}
+        {tab==="reports"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b"}}>Reports & Grievances</div>
+                <div style={{color:"#64748b",fontSize:13}}>Report incidents or submit complaints to management</div>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button className="btn" onClick={()=>{
+                  if(secretaryUnlocked)setSecretaryUnlocked(false);
+                  else{setShowNoticeLogin(true);setSecPin("");setSecPinErr(false);}
+                }} style={{background:secretaryUnlocked?"linear-gradient(135deg,#1e3a5f,#2563eb)":"#f1f5f9",color:secretaryUnlocked?"white":"#64748b",padding:"8px 11px",borderRadius:10,fontWeight:800,fontSize:11,display:"flex",alignItems:"center",gap:4}}>
+                  <span>{secretaryUnlocked?"🔓":"🔐"}</span><span>{secretaryUnlocked?"Sec.":"Secretary"}</span>
+                </button>
+                <button className="btn" onClick={()=>setShowAddReport(true)} style={{background:"linear-gradient(135deg,#7c3aed,#6366f1)",color:"white",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:12}}>+ Report</button>
+              </div>
+            </div>
+
+            {secretaryUnlocked&&(
+              <div style={{background:"linear-gradient(135deg,#1e3a5f,#2563eb)",borderRadius:10,padding:"9px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+                <span>🔓</span><div style={{color:"white",fontWeight:800,fontSize:12}}>Secretary View — Reporter details now visible</div>
+              </div>
+            )}
+            {!secretaryUnlocked&&(
+              <div style={{background:"#eff6ff",borderRadius:10,padding:"9px 13px",marginBottom:12,fontSize:12,color:"#1d4ed8",fontWeight:600}}>
+                🔒 Your identity is kept confidential. Only the Secretary can see who filed each report.
+              </div>
+            )}
+
+            {/* Filter tabs */}
+            <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+              {["All","Incident","Grievance"].map(f=>(
+                <button key={f} className="btn" onClick={()=>setReportFilter(f)}
+                  style={{padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:700,background:reportFilter===f?"#7c3aed":"#eef2ff",color:reportFilter===f?"white":"#4338ca",border:"1px solid #c7d2fe"}}>{f}</button>
+              ))}
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {filteredReports.map(r=>(
+                <div key={r.id} className="card" style={{background:"white",borderRadius:14,padding:"14px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",borderLeft:`4px solid ${r.reportType==="Incident"?"#dc2626":"#7c3aed"}`}}>
+                  <div style={{display:"flex",gap:10}}>
+                    {r.photo&&<img src={r.photo} alt="report" style={{width:62,height:62,borderRadius:10,objectFit:"cover",flexShrink:0,border:"2px solid #e2e8f0"}}/>}
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                        <span className="badge" style={{background:r.reportType==="Incident"?"#fee2e2":"#ede9fe",color:r.reportType==="Incident"?"#dc2626":"#7c3aed"}}>{r.reportType}</span>
+                        <span className="badge" style={{background:"#f1f5f9",color:"#64748b"}}>{r.category}</span>
+                        <span className="badge" style={{background:r.status==="Open"||r.status==="Submitted"?"#fef3c7":"#d1fae5",color:r.status==="Open"||r.status==="Submitted"?"#92400e":"#065f46"}}>{r.status}</span>
+                      </div>
+                      <div style={{fontWeight:700,fontSize:13,color:"#1e293b"}}>{r.description}</div>
+                      <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:4}}>📍 {r.flat} · 📅 {r.date}</div>
+                      {secretaryUnlocked&&(
+                        <div style={{marginTop:8,padding:"8px 10px",background:"#eff6ff",borderRadius:8,border:"1px solid #bfdbfe"}}>
+                          <div style={{fontSize:11,fontWeight:900,color:"#1e40af",marginBottom:2,textTransform:"uppercase"}}>🔓 Reporter Details (Secretary Only)</div>
+                          <div style={{fontSize:12,color:"#1e3a5f",fontWeight:700}}>👤 {r.reporterName||"Not provided"} · 📞 {r.reporterPhone||"Not provided"}</div>
+                        </div>
+                      )}
+                      {secretaryUnlocked&&(r.status==="Open"||r.status==="Submitted")&&(
+                        <button className="btn" onClick={()=>setReports(prev=>prev.map(x=>x.id===r.id?{...x,status:"Resolved"}:x))}
+                          style={{marginTop:8,background:"#d1fae5",color:"#059669",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800}}>✓ Mark Resolved</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filteredReports.length===0&&<div style={{textAlign:"center",padding:"36px 0",color:"#94a3b8"}}><div style={{fontSize:44}}>✅</div><div style={{fontWeight:700,marginTop:8}}>No reports filed</div></div>}
+            </div>
+          </div>
+        )}
+
+        {/* ── EXCHANGE BOARD — Change 3: Renamed & reworded ── */}
+        {tab==="exchange"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b"}}>🔄 Pet Exchange Board</div>
+                <div style={{color:"#64748b",fontSize:13}}>Share or exchange pet items with fellow residents</div>
+              </div>
+              <button className="btn" onClick={()=>setShowAddExchange(true)} style={{background:"linear-gradient(135deg,#059669,#10b981)",color:"white",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:12}}>+ List Item</button>
+            </div>
+            <div style={{background:"#eef2ff",borderRadius:10,padding:"10px 13px",marginBottom:14,fontSize:12,color:"#4338ca",fontWeight:600}}>
+              🏘️ This board is only for Century Ethos residents to share or exchange pet items with each other — toys, food, accessories and more.
+            </div>
+            {exchange.map(item=>(
+              <div key={item.id} className="card" style={{background:"white",borderRadius:14,padding:"14px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",opacity:item.claimed?.6:1,marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                      <span style={{fontWeight:900,fontSize:14,color:"#1e293b"}}>{item.itemName}</span>
+                      <span className="badge" style={{background:"#d1fae5",color:"#065f46"}}>{item.itemType}</span>
+                      {item.claimed&&<span className="badge" style={{background:"#f1f5f9",color:"#64748b"}}>Taken</span>}
+                    </div>
+                    <div style={{fontSize:12,color:"#64748b"}}>{item.reason}</div>
+                    <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:4}}>🏠 {item.flat} · 📞 {item.contact} · {item.date}</div>
+                  </div>
+                  {!item.claimed&&(
+                    <button className="btn" onClick={()=>{setExchange(o=>o.map(x=>x.id===item.id?{...x,claimed:true}:x));if(USE_LIVE)apiPost("claimOffer",{id:item.id});}}
+                      style={{background:"#eef2ff",color:"#4338ca",padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:800,flexShrink:0,marginLeft:8}}>I'll Take It</button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {exchange.length===0&&<div style={{textAlign:"center",padding:"36px 0",color:"#94a3b8"}}><div style={{fontSize:44}}>🔄</div><div style={{fontWeight:700,marginTop:8}}>Nothing listed yet</div></div>}
+          </div>
+        )}
+
+        {/* ── COMMUNITY Q&A — Change 7 ── */}
+        {tab==="community"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b"}}>💬 Pet Community</div>
+                <div style={{color:"#64748b",fontSize:13}}>Ask questions, share tips with fellow residents</div>
+              </div>
+              <button className="btn" onClick={()=>setShowAddQuestion(true)} style={{background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:12}}>+ Ask</button>
+            </div>
+            <div style={{background:"#eef2ff",borderRadius:10,padding:"10px 13px",marginBottom:14,fontSize:12,color:"#4338ca",fontWeight:600}}>
+              🏘️ A space for residents to ask pet-related questions and share advice with each other.
+            </div>
+            {community.length===0&&<div style={{textAlign:"center",padding:"36px 0",color:"#94a3b8"}}><div style={{fontSize:44}}>💬</div><div style={{fontWeight:700,marginTop:8}}>No questions yet — be the first to ask!</div></div>}
+            {community.map(q=>(
+              <div key={q.id} className="community-q">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:13,color:"#1e293b",lineHeight:1.4}}>{q.question}</div>
+                    <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:3}}>Asked by Flat {q.askedBy} · {q.date}</div>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexShrink:0,marginLeft:8}}>
+                    <span className="badge" style={{background:"#eef2ff",color:"#4338ca"}}>{q.replies.length} {q.replies.length===1?"reply":"replies"}</span>
+                  </div>
+                </div>
+                {/* Replies */}
+                {expandedQ===q.id&&q.replies.length>0&&(
+                  <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid #e0e7ff"}}>
+                    {q.replies.map((rep,i)=>(
+                      <div key={i} className="reply-box" style={{marginBottom:6}}>
+                        <div style={{fontSize:12,color:"#334155",fontWeight:600,lineHeight:1.5}}>{rep.text}</div>
+                        <div style={{fontSize:10,color:"#94a3b8",marginTop:3}}>Flat {rep.flat} · {rep.date}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{display:"flex",gap:8,marginTop:8}}>
+                  {q.replies.length>0&&(
+                    <button className="btn" onClick={()=>setExpandedQ(expandedQ===q.id?null:q.id)}
+                      style={{background:"#eef2ff",color:"#4338ca",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800}}>
+                      {expandedQ===q.id?"Hide Replies":"View Replies"}
+                    </button>
+                  )}
+                  <button className="btn" onClick={()=>{setShowAddReply(q.id);setNewReply({flat:"",text:""}); }}
+                    style={{background:"#f1f5f9",color:"#64748b",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800}}>Reply</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── NOTICE BOARD ── */}
+        {tab==="noticeboard"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#1e293b"}}>📌 Notice Board</div>
+                <div style={{color:"#64748b",fontSize:13}}>Important announcements for pet parents</div>
+              </div>
+              <button className="btn" onClick={()=>{
+                if(secretaryUnlocked)setShowAddNotice(true);
+                else{setShowNoticeLogin(true);setSecPin("");setSecPinErr(false);}
+              }} style={{background:secretaryUnlocked?"linear-gradient(135deg,#1e3a5f,#2563eb)":"#f1f5f9",color:secretaryUnlocked?"white":"#64748b",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:11,display:"flex",alignItems:"center",gap:5}}>
+                <span>{secretaryUnlocked?"📌":"🔐"}</span><span>{secretaryUnlocked?"Post Notice":"Secretary"}</span>
+              </button>
+            </div>
+            {secretaryUnlocked&&(
+              <div style={{background:"linear-gradient(135deg,#1e3a5f,#2563eb)",borderRadius:10,padding:"9px 13px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{color:"white",fontWeight:800,fontSize:12}}>🔓 Secretary Mode Active</div>
+                <button className="btn" onClick={()=>setSecretaryUnlocked(false)} style={{background:"rgba(255,255,255,.2)",color:"white",padding:"3px 10px",borderRadius:8,fontSize:11,fontWeight:800}}>Lock</button>
+              </div>
+            )}
+            {notices.length===0&&<div style={{textAlign:"center",padding:"36px 0",color:"#94a3b8"}}><div style={{fontSize:44}}>📌</div><div style={{fontWeight:700,marginTop:8}}>No notices posted yet</div></div>}
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {notices.map(n=>(
+                <div key={n.id} className="card" style={{background:"white",borderRadius:14,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",borderLeft:`4px solid ${n.important?"#f59e0b":"#cbd5e1"}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                    <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",flex:1}}>
+                      {n.important&&<span className="badge" style={{background:"#fef3c7",color:"#92400e"}}>📢 Important</span>}
+                      <span style={{fontWeight:900,fontSize:14,color:"#1e293b"}}>{n.title}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:8}}>
+                      <span style={{fontSize:11,color:"#94a3b8"}}>{n.date}</span>
+                      {secretaryUnlocked&&(
+                        <button className="btn" onClick={()=>setShowDeleteNotice(n.id)} style={{background:"#fee2e2",color:"#dc2626",width:22,height:22,borderRadius:"50%",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{fontSize:13,color:"#334155",lineHeight:1.7}}>{n.body}</div>
+                  <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:6}}>— {n.author||"Secretary"}</div>
+                </div>
+              ))}
+            </div>
+            {!secretaryUnlocked&&<div style={{marginTop:16,background:"#eff6ff",borderRadius:10,padding:"10px 13px",fontSize:12,color:"#1d4ed8",fontWeight:600}}>🔐 Secretary: tap the Secretary button above to post or delete notices.</div>}
+          </div>
+        )}
+      </div>{/* end content */}
+
+      {/* ═══════════ MODALS ═══════════ */}
+
+      {/* DELETE PET */}
+      {showDeleteConfirm&&(
+        <div className="overlay" onClick={()=>setShowDeleteConfirm(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:360,textAlign:"center"}}>
+            <div style={{fontSize:44,marginBottom:8}}>🗑️</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,marginBottom:8}}>Remove Pet Record?</div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:20,lineHeight:1.6}}>This will permanently delete this pet's registration. Only do this if the pet is shifting out of the society.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowDeleteConfirm(null)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={()=>deletePet(showDeleteConfirm)} style={{flex:1,padding:"12px",borderRadius:12,background:"#dc2626",color:"white",fontWeight:800}}>Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECRETARY LOGIN */}
+      {showNoticeLogin&&(
+        <div className="overlay" onClick={()=>setShowNoticeLogin(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:360,textAlign:"center"}}>
+            <div style={{fontSize:44,marginBottom:8}}>🔐</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,marginBottom:4}}>Secretary Login</div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:18,lineHeight:1.6}}>Enter the Secretary PIN to post notices, manage reports, and view reporter details.</div>
+            <input type="password" value={secPin} onChange={e=>setSecPin(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSecretaryUnlock()} placeholder="••••" maxLength={8}
+              style={{...iS,textAlign:"center",fontSize:22,letterSpacing:8,marginBottom:8,border:"2px solid #c7d2fe"}}/>
+            {secPinErr&&<div style={{color:"#dc2626",fontSize:12,fontWeight:700,marginBottom:8}}>Incorrect Secretary PIN.</div>}
+            <div style={{display:"flex",gap:10,marginTop:4}}>
+              <button className="btn" onClick={()=>setShowNoticeLogin(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={handleSecretaryUnlock} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#1e3a5f,#2563eb)",color:"white",fontWeight:800}}>Unlock</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REGISTER PET */}
+      {showAddPet&&(
+        <div className="overlay" onClick={()=>setShowAddPet(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1e293b"}}>Register a Pet 🐾</div>
+              <button className="btn" onClick={()=>setShowAddPet(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div style={{fontSize:11,color:"#94a3b8",marginBottom:4}}>Fields marked <span style={{color:"#dc2626",fontWeight:800}}>*</span> are required</div>
+            <SecHdr icon="📷" title="Pet Photo (Optional)"/>
+            <div className="fw">
+              <input type="file" accept="image/*" ref={fileRef} onChange={handlePetPhoto} style={{display:"none"}}/>
+              {photoPreview?(
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <img src={photoPreview} alt="preview" style={{width:72,height:72,borderRadius:14,objectFit:"cover",border:"3px solid #c7d2fe"}}/>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:12,color:"#059669",marginBottom:5}}>Photo selected!</div>
+                    <button className="btn" onClick={()=>fileRef.current.click()} style={{background:"#eef2ff",color:"#4338ca",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,marginRight:6}}>Change</button>
+                    <button className="btn" onClick={()=>{setPhotoPreview(null);sf("photo","");}} style={{background:"#fee2e2",color:"#dc2626",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800}}>Remove</button>
+                  </div>
+                </div>
+              ):(
+                <div className="photo-box" onClick={()=>fileRef.current.click()}>
+                  <div style={{fontSize:28,marginBottom:6}}>🐾</div>
+                  <div style={{fontWeight:800,color:"#64748b",fontSize:13,marginBottom:3}}>Tap to upload pet photo</div>
+                  <div style={{fontSize:11,color:"#94a3b8"}}>JPG or PNG, up to 10MB</div>
+                </div>
+              )}
+            </div>
+            <SecHdr icon="🐾" title="Pet Details"/>
+            <div className="fw"><label className="fl">Pet Name <span style={{color:"#dc2626"}}>*</span></label><input value={newPet.name} onChange={e=>sf("name",e.target.value)} placeholder="e.g. Bruno" style={iS}/></div>
+            <div className="fw"><label className="fl">Pet Type <span style={{color:"#dc2626"}}>*</span></label>
+              <select value={newPet.type} onChange={e=>sf("type",e.target.value)} style={iS}>
+                {["Dog","Cat","Bird","Fish","Rabbit","Other"].map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="fw"><label className="fl">Breed Details</label><input value={newPet.breed} onChange={e=>sf("breed",e.target.value)} placeholder="e.g. Golden Retriever, Persian, Mixed Breed" style={iS}/></div>
+            <div className="fw"><label className="fl">Date of Birth</label><input type="date" value={newPet.dob} onChange={e=>sf("dob",e.target.value)} style={iS}/></div>
+            <div className="fw">
+              <label className="fl">Temperament / Behaviour</label>
+              <select value={newPet.temperament} onChange={e=>sf("temperament",e.target.value)} style={iS}>
+                {TEMPERAMENTS.map(t=><option key={t}>{t}</option>)}
+              </select>
+              <div style={{fontSize:11,color:"#94a3b8",marginTop:3}}>Helps other residents know how to interact with your pet</div>
+            </div>
+            <SecHdr icon="🏠" title="Residence Details"/>
+            <div className="two-col">
+              <div className="fw"><label className="fl">Block No. <span style={{color:"#dc2626"}}>*</span></label><input value={newPet.block} onChange={e=>sf("block",e.target.value)} placeholder="e.g. A" style={iS}/></div>
+              <div className="fw"><label className="fl">Flat No. <span style={{color:"#dc2626"}}>*</span></label><input value={newPet.flat} onChange={e=>sf("flat",e.target.value)} placeholder="e.g. 201" style={iS}/></div>
+            </div>
+            <div className="fw"><label className="fl">E-Mail Address</label><input type="email" value={newPet.email} onChange={e=>sf("email",e.target.value)} placeholder="e.g. yourname@gmail.com" style={iS}/></div>
+            <SecHdr icon="👤" title="Primary Parent #1"/>
+            <div className="fw"><label className="fl">Name <span style={{color:"#dc2626"}}>*</span></label><input value={newPet.parent1Name} onChange={e=>sf("parent1Name",e.target.value)} placeholder="e.g. Rajesh Sharma" style={iS}/></div>
+            <div className="fw"><label className="fl">Phone No. <span style={{color:"#dc2626"}}>*</span></label><input type="tel" value={newPet.parent1Phone} onChange={e=>sf("parent1Phone",e.target.value)} placeholder="e.g. 9876543210" style={iS}/></div>
+            <SecHdr icon="👤" title="Primary Parent #2 (Optional)"/>
+            <div className="fw"><label className="fl">Name</label><input value={newPet.parent2Name} onChange={e=>sf("parent2Name",e.target.value)} placeholder="e.g. Priya Sharma" style={iS}/></div>
+            <div className="fw"><label className="fl">Phone No.</label><input type="tel" value={newPet.parent2Phone} onChange={e=>sf("parent2Phone",e.target.value)} placeholder="e.g. 9876543211" style={iS}/></div>
+            <SecHdr icon="🦺" title="Caregiver / Walker / Help (Optional)"/>
+            <div className="fw"><label className="fl">Name</label><input value={newPet.caregiverName} onChange={e=>sf("caregiverName",e.target.value)} placeholder="e.g. Ramesh Kumar" style={iS}/></div>
+            <div className="fw"><label className="fl">Phone No.</label><input type="tel" value={newPet.caregiverPhone} onChange={e=>sf("caregiverPhone",e.target.value)} placeholder="e.g. 9876543212" style={iS}/></div>
+            <SecHdr icon="💉" title="Vaccination Details"/>
+            <div style={{background:"#f0fdf4",borderRadius:12,padding:"13px",marginBottom:12,border:"1px solid #86efac"}}>
+              <div style={{fontWeight:800,fontSize:13,color:"#065f46",marginBottom:6}}>💉 Next Vaccination Due Date <span style={{color:"#dc2626"}}>*</span></div>
+              <div style={{fontSize:12,color:"#374151",marginBottom:10,lineHeight:1.6}}>
+                · Already vaccinated? Enter the <strong>next annual booster date</strong>.<br/>
+                · Not yet vaccinated? Enter the <strong>planned date</strong> for first vaccination.
+              </div>
+              <input type="date" value={newPet.vaccineDate} onChange={e=>sf("vaccineDate",e.target.value)} style={iS}/>
+              {newPet.vaccineDate&&(()=>{
+                const daysLeft=Math.ceil((new Date(newPet.vaccineDate)-new Date())/86400000);
+                const col=daysLeft>30?"#059669":daysLeft>=0?"#d97706":"#dc2626";
+                const msg=daysLeft>30?`✓ ${vaccTimeLabel(daysLeft)} away — good`:daysLeft>=0?`⚠ Only ${vaccTimeLabel(daysLeft)} left — book soon`:"⚠ This date is in the past — please update";
+                return <div style={{marginTop:8,padding:"7px 10px",borderRadius:8,background:daysLeft>30?"#d1fae5":daysLeft>=0?"#fef3c7":"#fee2e2",fontSize:12,fontWeight:700,color:col}}>{msg}</div>;
+              })()}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:16}}>
+              <button className="btn" onClick={()=>setShowAddPet(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addPet} disabled={syncing} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",fontWeight:800}}>
+                {syncing?"Saving...":"🐾 Register Pet"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOST & FOUND MODAL */}
+      {showAddAlert&&(
+        <div className="overlay" onClick={()=>setShowAddAlert(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Post Alert 🔍</div>
+              <button className="btn" onClick={()=>setShowAddAlert(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div className="fw"><label className="fl">Alert Type</label>
+              <div style={{display:"flex",gap:8}}>
+                {["lost","found"].map(t=>(
+                  <button key={t} className="btn" onClick={()=>setNewAlert({...newAlert,type:t})} style={{flex:1,padding:"10px",borderRadius:10,fontWeight:800,fontSize:13,background:newAlert.type===t?(t==="lost"?"#fee2e2":"#d1fae5"):"#f1f5f9",color:newAlert.type===t?(t==="lost"?"#dc2626":"#059669"):"#64748b",border:`2px solid ${newAlert.type===t?(t==="lost"?"#dc2626":"#059669"):"transparent"}`}}>{t==="lost"?"🚨 Lost":"✅ Found"}</button>
+                ))}
+              </div>
+            </div>
+            {[{l:"Pet Name *",k:"petName",p:"e.g. Max"},{l:"Pet Type",k:"petType",p:"e.g. Dog"},{l:"Your Block & Flat",k:"flat",p:"e.g. A-205"},{l:"Contact Number *",k:"contact",p:"e.g. 9876501234"}].map(f=>(
+              <div key={f.k} className="fw"><label className="fl">{f.l}</label><input value={newAlert[f.k]} onChange={e=>setNewAlert({...newAlert,[f.k]:e.target.value})} placeholder={f.p} style={iS}/></div>
+            ))}
+            <div className="fw"><label className="fl">Description</label><textarea value={newAlert.description} onChange={e=>setNewAlert({...newAlert,description:e.target.value})} placeholder="Color, collar, distinguishing marks..." style={{...iS,minHeight:72,resize:"vertical"}}/></div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddAlert(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addAlert} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#dc2626,#f97316)",color:"white",fontWeight:800}}>Post Alert</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REVIEW MODAL */}
+      {showAddReview&&(
+        <div className="overlay" onClick={()=>setShowAddReview(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Write a Review ⭐</div>
+              <button className="btn" onClick={()=>setShowAddReview(null)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div className="fw"><label className="fl">Your Rating</label><div style={{marginTop:4}}><StarRating value={newReview.rating} onChange={r=>setNewReview({...newReview,rating:r})}/></div></div>
+            <div className="fw"><label className="fl">Your Flat No. *</label><input value={newReview.user} onChange={e=>setNewReview({...newReview,user:e.target.value})} placeholder="e.g. A-201" style={iS}/></div>
+            <div className="fw"><label className="fl">Your Review *</label><textarea value={newReview.text} onChange={e=>setNewReview({...newReview,text:e.target.value})} placeholder="Share your experience..." style={{...iS,minHeight:80,resize:"vertical"}}/></div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddReview(null)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={()=>addReview(showAddReview)} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"white",fontWeight:800}}>Submit Review</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COMBINED REPORT MODAL — Change 4 */}
+      {showAddReport&&(
+        <div className="overlay" onClick={()=>setShowAddReport(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Submit a Report ⚠️</div>
+              <button className="btn" onClick={()=>setShowAddReport(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div style={{background:"#eff6ff",borderRadius:10,padding:"10px 12px",marginBottom:13,display:"flex",gap:8}}>
+              <span style={{fontSize:16,flexShrink:0}}>🔒</span>
+              <div style={{fontSize:12,color:"#1d4ed8",fontWeight:600,lineHeight:1.6}}>Your name and contact details are <strong>kept fully confidential</strong> and visible only to the Secretary.</div>
+            </div>
+            {/* Report type toggle */}
+            <div className="fw">
+              <label className="fl">Report Type</label>
+              <div style={{display:"flex",gap:8}}>
+                <button className="btn" onClick={()=>setNewReport(r=>({...r,reportType:"Incident",category:"Hygiene"}))} style={{flex:1,padding:"9px",borderRadius:10,fontWeight:800,fontSize:12,background:newReport.reportType==="Incident"?"#fee2e2":"#f1f5f9",color:newReport.reportType==="Incident"?"#dc2626":"#64748b",border:`2px solid ${newReport.reportType==="Incident"?"#dc2626":"transparent"}`}}>⚠️ Incident</button>
+                <button className="btn" onClick={()=>setNewReport(r=>({...r,reportType:"Grievance",category:"Noise"}))} style={{flex:1,padding:"9px",borderRadius:10,fontWeight:800,fontSize:12,background:newReport.reportType==="Grievance"?"#ede9fe":"#f1f5f9",color:newReport.reportType==="Grievance"?"#7c3aed":"#64748b",border:`2px solid ${newReport.reportType==="Grievance"?"#7c3aed":"transparent"}`}}>📋 Grievance</button>
+              </div>
+            </div>
+            <div className="fw"><label className="fl">Category</label>
+              <select value={newReport.category} onChange={e=>setNewReport(r=>({...r,category:e.target.value}))} style={iS}>
+                {newReport.reportType==="Incident"
+                  ?["Hygiene","Safety Concern","Aggressive Pet","Property Damage","Noise","Other"].map(t=><option key={t}>{t}</option>)
+                  :["Noise","Leash Violation","Garden Damage","Lift Misuse","General Complaint","Other"].map(t=><option key={t}>{t}</option>)
+                }
+              </select>
+            </div>
+            <div className="fw"><label className="fl">Location / Area *</label><input value={newReport.flat} onChange={e=>setNewReport(r=>({...r,flat:e.target.value}))} placeholder="e.g. Near Gate 2, A-Block, Flat A-405" style={iS}/></div>
+            <div className="fw"><label className="fl">Description *</label><textarea value={newReport.description} onChange={e=>setNewReport(r=>({...r,description:e.target.value}))} placeholder="Describe the issue clearly..." style={{...iS,minHeight:80,resize:"vertical"}}/></div>
+            <SecHdr icon="🔒" title="Your Details (Confidential — Secretary Only)"/>
+            <div className="two-col">
+              <div className="fw"><label className="fl">Your Name</label><input value={newReport.reporterName} onChange={e=>setNewReport(r=>({...r,reporterName:e.target.value}))} placeholder="e.g. Rajesh Sharma" style={iS}/></div>
+              <div className="fw"><label className="fl">Your Phone</label><input type="tel" value={newReport.reporterPhone} onChange={e=>setNewReport(r=>({...r,reporterPhone:e.target.value}))} placeholder="e.g. 9876543210" style={iS}/></div>
+            </div>
+            {newReport.reportType==="Incident"&&(
+              <div className="fw">
+                <label className="fl">Photo Evidence (Optional)</label>
+                <input type="file" accept="image/*" ref={reportFileRef} onChange={handleReportPhoto} style={{display:"none"}}/>
+                {reportPhoto
+                  ?<div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <img src={reportPhoto} alt="rep" style={{width:62,height:62,borderRadius:10,objectFit:"cover",border:"2px solid #e2e8f0"}}/>
+                      <button className="btn" onClick={()=>{setReportPhoto(null);setNewReport(r=>({...r,photo:""}));}} style={{background:"#fee2e2",color:"#dc2626",padding:"5px 10px",borderRadius:8,fontSize:11,fontWeight:800}}>Remove</button>
+                    </div>
+                  :<div className="photo-box" onClick={()=>reportFileRef.current.click()}>
+                      <div style={{fontSize:22,marginBottom:4}}>📷</div>
+                      <div style={{fontWeight:700,color:"#64748b",fontSize:12}}>Tap to attach photo</div>
+                    </div>
+                }
+              </div>
+            )}
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddReport(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addReport} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#7c3aed,#6366f1)",color:"white",fontWeight:800}}>Submit Report</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXCHANGE MODAL — Change 3 */}
+      {showAddExchange&&(
+        <div className="overlay" onClick={()=>setShowAddExchange(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>List an Item for Exchange 🔄</div>
+              <button className="btn" onClick={()=>setShowAddExchange(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div className="fw"><label className="fl">Item Name *</label><input value={newExchange.itemName} onChange={e=>setNewExchange({...newExchange,itemName:e.target.value})} placeholder="e.g. Royal Canin Puppy Pack" style={iS}/></div>
+            <div className="fw"><label className="fl">Item Type</label>
+              <select value={newExchange.itemType} onChange={e=>setNewExchange({...newExchange,itemType:e.target.value})} style={iS}>
+                {["Toy","Food/Treats","Accessories","Medicine (unopened)","Clothing","Cage/Carrier","Other"].map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="fw"><label className="fl">Reason for listing</label><input value={newExchange.reason} onChange={e=>setNewExchange({...newExchange,reason:e.target.value})} placeholder="e.g. My pet didn't take to it — barely used" style={iS}/></div>
+            <div className="two-col">
+              <div className="fw"><label className="fl">Your Flat *</label><input value={newExchange.flat} onChange={e=>setNewExchange({...newExchange,flat:e.target.value})} placeholder="e.g. A-201" style={iS}/></div>
+              <div className="fw"><label className="fl">Contact No. *</label><input type="tel" value={newExchange.contact} onChange={e=>setNewExchange({...newExchange,contact:e.target.value})} placeholder="e.g. 9876543210" style={iS}/></div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddExchange(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addExchangeItem} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#059669,#10b981)",color:"white",fontWeight:800}}>List Item</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD VET/PRO */}
+      {showAddVetPro&&(
+        <div className="overlay" onClick={()=>setShowAddVetPro(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Add a Professional 🏥</div>
+              <button className="btn" onClick={()=>setShowAddVetPro(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div className="fw"><label className="fl">Category</label>
+              <select value={newVetPro.category} onChange={e=>setNewVetPro({...newVetPro,category:e.target.value})} style={iS}>
+                {["Vet","Groomer","Walker","Trainer"].map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="fw"><label className="fl">Name *</label><input value={newVetPro.name} onChange={e=>setNewVetPro({...newVetPro,name:e.target.value})} placeholder="e.g. Happy Paws Clinic" style={iS}/></div>
+            <div className="fw"><label className="fl">Specialty / Services</label><input value={newVetPro.specialty} onChange={e=>setNewVetPro({...newVetPro,specialty:e.target.value})} placeholder="e.g. Dogs & Cats" style={iS}/></div>
+            <div className="fw"><label className="fl">Phone No. *</label><input type="tel" value={newVetPro.phone} onChange={e=>setNewVetPro({...newVetPro,phone:e.target.value})} placeholder="e.g. 9876543210" style={iS}/></div>
+            <div className="two-col">
+              <div className="fw"><label className="fl">Distance</label><input value={newVetPro.distance} onChange={e=>setNewVetPro({...newVetPro,distance:e.target.value})} placeholder="e.g. 1.2 km" style={iS}/></div>
+              <div className="fw"><label className="fl">Hours</label><input value={newVetPro.hours} onChange={e=>setNewVetPro({...newVetPro,hours:e.target.value})} placeholder="e.g. 9am-6pm" style={iS}/></div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddVetPro(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addVetPro} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#059669,#10b981)",color:"white",fontWeight:800}}>Add Professional</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POST NOTICE */}
+      {showAddNotice&&(
+        <div className="overlay" onClick={()=>setShowAddNotice(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Post a Notice 📌</div>
+              <button className="btn" onClick={()=>setShowAddNotice(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div className="fw">
+              <label className="fl">Notice Type</label>
+              <div style={{display:"flex",gap:10}}>
+                <button className="btn" onClick={()=>setNewNotice(n=>({...n,important:false}))} style={{flex:1,padding:"9px",borderRadius:10,fontWeight:800,fontSize:12,background:!newNotice.important?"#f1f5f9":"#fafafa",color:!newNotice.important?"#334155":"#94a3b8",border:`2px solid ${!newNotice.important?"#94a3b8":"transparent"}`}}>📋 Regular</button>
+                <button className="btn" onClick={()=>setNewNotice(n=>({...n,important:true}))} style={{flex:1,padding:"9px",borderRadius:10,fontWeight:800,fontSize:12,background:newNotice.important?"#fef3c7":"#fafafa",color:newNotice.important?"#92400e":"#94a3b8",border:`2px solid ${newNotice.important?"#f59e0b":"transparent"}`}}>📢 Important</button>
+              </div>
+            </div>
+            <div className="fw"><label className="fl">Notice Title *</label><input value={newNotice.title} onChange={e=>setNewNotice(n=>({...n,title:e.target.value}))} placeholder="e.g. Dog Park Maintenance on Sunday" style={iS}/></div>
+            <div className="fw"><label className="fl">Full Message *</label><textarea value={newNotice.body} onChange={e=>setNewNotice(n=>({...n,body:e.target.value}))} placeholder="Type the full message including dates, times, and details..." style={{...iS,minHeight:110,resize:"vertical"}}/></div>
+            <div className="fw"><label className="fl">Posted By</label><input value={newNotice.author} onChange={e=>setNewNotice(n=>({...n,author:e.target.value}))} placeholder="e.g. Secretary, Management Committee" style={iS}/></div>
+            {(newNotice.title||newNotice.body)&&(
+              <div style={{background:"#f8fafc",borderRadius:10,padding:"11px",marginBottom:12,border:"1px solid #e2e8f0"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:6,textTransform:"uppercase"}}>Preview</div>
+                <div style={{display:"flex",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                  {newNotice.important&&<span className="badge" style={{background:"#fef3c7",color:"#92400e"}}>📢 Important</span>}
+                  <span style={{fontWeight:900,fontSize:13,color:"#1e293b"}}>{newNotice.title||"Title..."}</span>
+                </div>
+                <div style={{fontSize:12,color:"#334155",lineHeight:1.6}}>{newNotice.body||"Message..."}</div>
+              </div>
+            )}
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddNotice(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addNotice} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#1e3a5f,#2563eb)",color:"white",fontWeight:800}}>📌 Post Notice</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE NOTICE */}
+      {showDeleteNotice&&(
+        <div className="overlay" onClick={()=>setShowDeleteNotice(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:360,textAlign:"center"}}>
+            <div style={{fontSize:44,marginBottom:8}}>🗑️</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,marginBottom:8}}>Delete This Notice?</div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:20}}>This notice will be permanently removed from the board.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowDeleteNotice(null)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={()=>deleteNotice(showDeleteNotice)} style={{flex:1,padding:"12px",borderRadius:12,background:"#dc2626",color:"white",fontWeight:800}}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ASK QUESTION — Change 7 */}
+      {showAddQuestion&&(
+        <div className="overlay" onClick={()=>setShowAddQuestion(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Ask the Community 💬</div>
+              <button className="btn" onClick={()=>setShowAddQuestion(false)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div className="fw"><label className="fl">Your Question *</label><textarea value={newQuestion.question} onChange={e=>setNewQuestion({...newQuestion,question:e.target.value})} placeholder="e.g. Does anyone know a good pet groomer nearby?" style={{...iS,minHeight:90,resize:"vertical"}}/></div>
+            <div className="fw"><label className="fl">Your Flat No. *</label><input value={newQuestion.askedBy} onChange={e=>setNewQuestion({...newQuestion,askedBy:e.target.value})} placeholder="e.g. A-201" style={iS}/></div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddQuestion(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={addQuestion} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",fontWeight:800}}>Post Question</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REPLY TO QUESTION — Change 7 */}
+      {showAddReply&&(
+        <div className="overlay" onClick={()=>setShowAddReply(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}>Post a Reply 💬</div>
+              <button className="btn" onClick={()=>setShowAddReply(null)} style={{background:"#f1f5f9",borderRadius:"50%",width:28,height:28,fontSize:13,color:"#64748b"}}>✕</button>
+            </div>
+            <div style={{background:"#eef2ff",borderRadius:10,padding:"10px 12px",marginBottom:13,fontSize:12,color:"#4338ca",fontWeight:600}}>
+              💬 Replying to: <em>"{community.find(q=>q.id===showAddReply)?.question?.slice(0,60)}{community.find(q=>q.id===showAddReply)?.question?.length>60?"...":""}"</em>
+            </div>
+            <div className="fw"><label className="fl">Your Reply *</label><textarea value={newReply.text} onChange={e=>setNewReply({...newReply,text:e.target.value})} placeholder="Share your answer or experience..." style={{...iS,minHeight:80,resize:"vertical"}}/></div>
+            <div className="fw"><label className="fl">Your Flat No. *</label><input value={newReply.flat} onChange={e=>setNewReply({...newReply,flat:e.target.value})} placeholder="e.g. B-104" style={iS}/></div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setShowAddReply(null)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
+              <button className="btn" onClick={()=>addReplyFn(showAddReply)} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",fontWeight:800}}>Post Reply</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast&&<div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
