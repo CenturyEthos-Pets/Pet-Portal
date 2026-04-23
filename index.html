@@ -160,8 +160,8 @@ const DEMO_REPORTS=[
   {id:2,reportType:"Grievance",category:"Noise",description:"Dog barking continuously after 11pm from Flat C-405",flat:"A-301",reporterName:"",reporterPhone:"",date:"2026-04-19",status:"Under Review",photo:""},
 ];
 const DEMO_NOTICES=[
-  {id:1,title:"Dog Park Cleaning Schedule",body:"The dog park will be cleaned every Sunday 7am-9am. Please plan your visits accordingly.",date:"2026-04-18",important:true,author:"Secretary"},
-  {id:2,title:"New Vet Camp — May 5th",body:"Dr. Sharma will conduct a free check-up camp on May 5th, 10am-1pm in the Community Hall.",date:"2026-04-15",important:false,author:"Secretary"},
+  {id:1,title:"Dog Park Cleaning Schedule",body:"The dog park will be cleaned every Sunday 7am-9am. Please plan your visits accordingly.",date:"2026-04-18",important:true,author:"Pet Group RR"},
+  {id:2,title:"New Vet Camp — May 5th",body:"Dr. Sharma will conduct a free check-up camp on May 5th, 10am-1pm in the Community Hall.",date:"2026-04-15",important:false,author:"Pet Group RR"},
 ];
 // Change 3: Renamed from Offers to Exchange Board
 const DEMO_EXCHANGE=[
@@ -457,7 +457,7 @@ function App(){
             style={{...iS,textAlign:"center",fontSize:24,letterSpacing:8,marginBottom:8,border:"2px solid #c7d2fe"}}/>
           {pinErr&&<div style={{color:"#dc2626",fontSize:12,fontWeight:700,marginBottom:8}}>Incorrect PIN. Please try again.</div>}
           <button className="btn" onClick={handleUnlock} style={{width:"100%",padding:"13px",borderRadius:12,background:"linear-gradient(135deg,#4338ca,#6366f1)",color:"white",fontWeight:800,fontSize:15,marginTop:4}}>Enter Portal</button>
-          <div style={{fontSize:11,color:"#94a3b8",marginTop:14,lineHeight:1.6}}>For Century Ethos residents only.<br/>Contact secretary for the PIN.</div>
+          <div style={{fontSize:11,color:"#94a3b8",marginTop:14,lineHeight:1.6}}>For Century Ethos residents only.<br/>Contact Pet Group RR for the PIN.</div>
         </div>
       </div>
     );
@@ -839,7 +839,7 @@ function App(){
                   if(secretaryUnlocked)setSecretaryUnlocked(false);
                   else{setShowNoticeLogin(true);setSecPin("");setSecPinErr(false);}
                 }} style={{background:secretaryUnlocked?"linear-gradient(135deg,#1e3a5f,#2563eb)":"#f1f5f9",color:secretaryUnlocked?"white":"#64748b",padding:"8px 11px",borderRadius:10,fontWeight:800,fontSize:11,display:"flex",alignItems:"center",gap:4}}>
-                  <span>{secretaryUnlocked?"🔓":"🔐"}</span><span>{secretaryUnlocked?"Sec.":"Secretary"}</span>
+                  <span>{secretaryUnlocked?"🔓":"🔐"}</span><span>{secretaryUnlocked?"Sec.":"Pet Group RR"}</span>
                 </button>
                 <button className="btn" onClick={()=>setShowAddReport(true)} style={{background:"linear-gradient(135deg,#7c3aed,#6366f1)",color:"white",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:12}}>+ Report</button>
               </div>
@@ -847,12 +847,12 @@ function App(){
 
             {secretaryUnlocked&&(
               <div style={{background:"linear-gradient(135deg,#1e3a5f,#2563eb)",borderRadius:10,padding:"9px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-                <span>🔓</span><div style={{color:"white",fontWeight:800,fontSize:12}}>Secretary View — Reporter details now visible</div>
+                <span>🔓</span><div style={{color:"white",fontWeight:800,fontSize:12}}>Pet Group RR View — Reporter details now visible</div>
               </div>
             )}
             {!secretaryUnlocked&&(
               <div style={{background:"#eff6ff",borderRadius:10,padding:"9px 13px",marginBottom:12,fontSize:12,color:"#1d4ed8",fontWeight:600}}>
-                🔒 Your identity is kept confidential. Only the Secretary can see who filed each report.
+                🔒 Your identity is kept confidential. Only the Pet Group RR can see who filed each report.
               </div>
             )}
 
@@ -879,7 +879,7 @@ function App(){
                       <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:4}}>📍 {r.flat} · 📅 {r.date}</div>
                       {secretaryUnlocked&&(
                         <div style={{marginTop:8,padding:"8px 10px",background:"#eff6ff",borderRadius:8,border:"1px solid #bfdbfe"}}>
-                          <div style={{fontSize:11,fontWeight:900,color:"#1e40af",marginBottom:2,textTransform:"uppercase"}}>🔓 Reporter Details (Secretary Only)</div>
+                          <div style={{fontSize:11,fontWeight:900,color:"#1e40af",marginBottom:2,textTransform:"uppercase"}}>🔓 Reporter Details (Pet Group RR Only)</div>
                           <div style={{fontSize:12,color:"#1e3a5f",fontWeight:700}}>👤 {r.reporterName||"Not provided"} · 📞 {r.reporterPhone||"Not provided"}</div>
                         </div>
                       )}
@@ -995,12 +995,12 @@ function App(){
                 if(secretaryUnlocked)setShowAddNotice(true);
                 else{setShowNoticeLogin(true);setSecPin("");setSecPinErr(false);}
               }} style={{background:secretaryUnlocked?"linear-gradient(135deg,#1e3a5f,#2563eb)":"#f1f5f9",color:secretaryUnlocked?"white":"#64748b",padding:"8px 12px",borderRadius:10,fontWeight:800,fontSize:11,display:"flex",alignItems:"center",gap:5}}>
-                <span>{secretaryUnlocked?"📌":"🔐"}</span><span>{secretaryUnlocked?"Post Notice":"Secretary"}</span>
+                <span>{secretaryUnlocked?"📌":"🔐"}</span><span>{secretaryUnlocked?"Post Notice":"Pet Group RR"}</span>
               </button>
             </div>
             {secretaryUnlocked&&(
               <div style={{background:"linear-gradient(135deg,#1e3a5f,#2563eb)",borderRadius:10,padding:"9px 13px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{color:"white",fontWeight:800,fontSize:12}}>🔓 Secretary Mode Active</div>
+                <div style={{color:"white",fontWeight:800,fontSize:12}}>🔓 Pet Group RR Mode Active</div>
                 <button className="btn" onClick={()=>setSecretaryUnlocked(false)} style={{background:"rgba(255,255,255,.2)",color:"white",padding:"3px 10px",borderRadius:8,fontSize:11,fontWeight:800}}>Lock</button>
               </div>
             )}
@@ -1021,11 +1021,11 @@ function App(){
                     </div>
                   </div>
                   <div style={{fontSize:13,color:"#334155",lineHeight:1.7}}>{n.body}</div>
-                  <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:6}}>— {n.author||"Secretary"}</div>
+                  <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:6}}>— {n.author||"Pet Group RR"}</div>
                 </div>
               ))}
             </div>
-            {!secretaryUnlocked&&<div style={{marginTop:16,background:"#eff6ff",borderRadius:10,padding:"10px 13px",fontSize:12,color:"#1d4ed8",fontWeight:600}}>🔐 Secretary: tap the Secretary button above to post or delete notices.</div>}
+            {!secretaryUnlocked&&<div style={{marginTop:16,background:"#eff6ff",borderRadius:10,padding:"10px 13px",fontSize:12,color:"#1d4ed8",fontWeight:600}}>🔐 Pet Group RR: tap the Pet Group RR button above to post or delete notices.</div>}
           </div>
         )}
       </div>{/* end content */}
@@ -1047,16 +1047,16 @@ function App(){
         </div>
       )}
 
-      {/* SECRETARY LOGIN */}
+      {/* Pet Group RR LOGIN */}
       {showNoticeLogin&&(
         <div className="overlay" onClick={()=>setShowNoticeLogin(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:360,textAlign:"center"}}>
             <div style={{fontSize:44,marginBottom:8}}>🔐</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,marginBottom:4}}>Secretary Login</div>
-            <div style={{fontSize:13,color:"#64748b",marginBottom:18,lineHeight:1.6}}>Enter the Secretary PIN to post notices, manage reports, and view reporter details.</div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:18,lineHeight:1.6}}>Enter the Pet Group RR PIN to post notices, manage reports, and view reporter details.</div>
             <input type="password" value={secPin} onChange={e=>setSecPin(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSecretaryUnlock()} placeholder="••••" maxLength={8}
               style={{...iS,textAlign:"center",fontSize:22,letterSpacing:8,marginBottom:8,border:"2px solid #c7d2fe"}}/>
-            {secPinErr&&<div style={{color:"#dc2626",fontSize:12,fontWeight:700,marginBottom:8}}>Incorrect Secretary PIN.</div>}
+            {secPinErr&&<div style={{color:"#dc2626",fontSize:12,fontWeight:700,marginBottom:8}}>Incorrect Pet Group RR PIN.</div>}
             <div style={{display:"flex",gap:10,marginTop:4}}>
               <button className="btn" onClick={()=>setShowNoticeLogin(false)} style={{flex:1,padding:"12px",borderRadius:12,background:"#f1f5f9",color:"#64748b",fontWeight:800}}>Cancel</button>
               <button className="btn" onClick={handleSecretaryUnlock} style={{flex:2,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#1e3a5f,#2563eb)",color:"white",fontWeight:800}}>Unlock</button>
@@ -1206,7 +1206,7 @@ function App(){
             </div>
             <div style={{background:"#eff6ff",borderRadius:10,padding:"10px 12px",marginBottom:13,display:"flex",gap:8}}>
               <span style={{fontSize:16,flexShrink:0}}>🔒</span>
-              <div style={{fontSize:12,color:"#1d4ed8",fontWeight:600,lineHeight:1.6}}>Your name and contact details are <strong>kept fully confidential</strong> and visible only to the Secretary.</div>
+              <div style={{fontSize:12,color:"#1d4ed8",fontWeight:600,lineHeight:1.6}}>Your name and contact details are <strong>kept fully confidential</strong> and visible only to the Pet Group RR.</div>
             </div>
             {/* Report type toggle */}
             <div className="fw">
@@ -1226,7 +1226,7 @@ function App(){
             </div>
             <div className="fw"><label className="fl">Location / Area *</label><input value={newReport.flat} onChange={e=>setNewReport(r=>({...r,flat:e.target.value}))} placeholder="e.g. Near Gate 2, A-Block, Flat A-405" style={iS}/></div>
             <div className="fw"><label className="fl">Description *</label><textarea value={newReport.description} onChange={e=>setNewReport(r=>({...r,description:e.target.value}))} placeholder="Describe the issue clearly..." style={{...iS,minHeight:80,resize:"vertical"}}/></div>
-            <SecHdr icon="🔒" title="Your Details (Confidential — Secretary Only)"/>
+            <SecHdr icon="🔒" title="Your Details (Confidential — Pet Group RR Only)"/>
             <div className="two-col">
               <div className="fw"><label className="fl">Your Name</label><input value={newReport.reporterName} onChange={e=>setNewReport(r=>({...r,reporterName:e.target.value}))} placeholder="e.g. Rajesh Sharma" style={iS}/></div>
               <div className="fw"><label className="fl">Your Phone</label><input type="tel" value={newReport.reporterPhone} onChange={e=>setNewReport(r=>({...r,reporterPhone:e.target.value}))} placeholder="e.g. 9876543210" style={iS}/></div>
@@ -1327,7 +1327,7 @@ function App(){
             </div>
             <div className="fw"><label className="fl">Notice Title *</label><input value={newNotice.title} onChange={e=>setNewNotice(n=>({...n,title:e.target.value}))} placeholder="e.g. Dog Park Maintenance on Sunday" style={iS}/></div>
             <div className="fw"><label className="fl">Full Message *</label><textarea value={newNotice.body} onChange={e=>setNewNotice(n=>({...n,body:e.target.value}))} placeholder="Type the full message including dates, times, and details..." style={{...iS,minHeight:110,resize:"vertical"}}/></div>
-            <div className="fw"><label className="fl">Posted By</label><input value={newNotice.author} onChange={e=>setNewNotice(n=>({...n,author:e.target.value}))} placeholder="e.g. Secretary, Management Committee" style={iS}/></div>
+            <div className="fw"><label className="fl">Posted By</label><input value={newNotice.author} onChange={e=>setNewNotice(n=>({...n,author:e.target.value}))} placeholder="e.g. Pet Group RR, Management Committee" style={iS}/></div>
             {(newNotice.title||newNotice.body)&&(
               <div style={{background:"#f8fafc",borderRadius:10,padding:"11px",marginBottom:12,border:"1px solid #e2e8f0"}}>
                 <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:6,textTransform:"uppercase"}}>Preview</div>
